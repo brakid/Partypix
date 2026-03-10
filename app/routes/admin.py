@@ -254,7 +254,10 @@ async def analytics_page(request: Request):
     db.close()
     
     # Format size
-    if total_size > 1024 * 1024 * 1024:
+    if total_size > 1024 * 1024 * 1024 * 1024:
+        storage_gb = total_size / (1024 * 1024 * 1024 * 1024)
+        storage_str = f"{storage_gb:.2f} TB"
+    elif total_size > 1024 * 1024 * 1024:
         storage_gb = total_size / (1024 * 1024 * 1024)
         storage_str = f"{storage_gb:.2f} GB"
     else:

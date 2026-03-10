@@ -178,6 +178,18 @@ This document traces the conversation and requirements that led to the developme
 - Upload page shows message when disabled
 - Upload POST returns error when disabled
 
+### 10. Analytics Bug Fix
+**Issue:** photos_with_tags showed 40 instead of 5 (5 photos × 8 tags each = 40 rows, not 5 unique photos)
+
+**Fix:** Changed query from counting all rows to counting distinct photo_ids:
+```python
+# Before (wrong):
+photos_with_tags = db.query(photo_tags).distinct(photo_tags.c.photo_id).count()
+
+# After (correct):
+photos_with_tags = db.query(func.count(func.distinct(photo_tags.c.photo_id))).scalar() or 0
+```
+
 ---
 
 ## Files Created
