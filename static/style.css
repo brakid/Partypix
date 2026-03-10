@@ -299,3 +299,110 @@ nav a:hover, nav a.active {
   max-width: 90%;
   max-height: 90%;
 }
+
+/* Dark Mode Toggle */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-left: 1rem;
+}
+
+.theme-toggle:hover {
+  background: var(--border);
+}
+
+/* Dark Mode - Auto based on system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #818cf8;
+    --primary-hover: #6366f1;
+    --bg: #111827;
+    --card-bg: #1f2937;
+    --text: #f9fafb;
+    --text-muted: #9ca3af;
+    --border: #374151;
+    --danger: #f87171;
+    --success: #4ade80;
+  }
+  
+  .dropzone {
+    border-color: var(--border);
+  }
+  
+  .filters a, .btn-secondary {
+    background: var(--card-bg);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  
+  .tag {
+    background: #3730a3;
+    color: #e0e7ff;
+  }
+  
+  .alert-success {
+    background: #064e3b;
+    color: #a7f3d0;
+  }
+  
+  .alert-error {
+    background: #7f1d1d;
+    color: #fecaca;
+  }
+  
+  input, select {
+    background: var(--card-bg);
+    color: var(--text);
+    border-color: var(--border);
+  }
+}
+
+/* Manual Dark Mode Class */
+body.dark {
+  --primary: #818cf8;
+  --primary-hover: #6366f1;
+  --bg: #111827;
+  --card-bg: #1f2937;
+  --text: #f9fafb;
+  --text-muted: #9ca3af;
+  --border: #374151;
+  --danger: #f87171;
+  --success: #4ade80;
+}
+
+body.dark .dropzone {
+  border-color: var(--border);
+}
+
+body.dark .filters a, 
+body.dark .btn-secondary {
+  background: var(--card-bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body.dark .tag {
+  background: #3730a3;
+  color: #e0e7ff;
+}
+
+body.dark .alert-success {
+  background: #064e3b;
+  color: #a7f3d0;
+}
+
+body.dark .alert-error {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+body.dark input, 
+body.dark select {
+  background: var(--card-bg);
+  color: var(--text);
+  border-color: var(--border);
+}

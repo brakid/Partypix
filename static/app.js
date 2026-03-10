@@ -1,3 +1,33 @@
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const toggleBtn = document.querySelector('.theme-toggle');
+    
+    body.classList.toggle('dark');
+    
+    const isDark = body.classList.contains('dark');
+    toggleBtn.textContent = isDark ? '☀️' : '🌙';
+    
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
+
+// Load saved theme preference
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const toggleBtn = document.querySelector('.theme-toggle');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        if (toggleBtn) toggleBtn.textContent = '☀️';
+    } else if (savedTheme === 'light') {
+        document.body.classList.remove('dark');
+        if (toggleBtn) toggleBtn.textContent = '🌙';
+    }
+    // If no saved preference, rely on CSS media query
+}
+
+loadTheme();
+
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('file-input');
     const dropzone = document.getElementById('dropzone');
