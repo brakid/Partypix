@@ -19,6 +19,7 @@ Photo sharing platform for parties. Guests upload photos from their phones to a 
 - AI-powered semantic tagging using Ollama (post-party)
 - Photo selection and ZIP download
 - **Dark mode** - Auto-detects system preference, manual toggle available
+- **Mobile-first design** - Responsive layout optimized for phones
 - PWA support (add to home screen)
 
 ## Setup

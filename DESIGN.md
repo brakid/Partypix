@@ -373,6 +373,45 @@ thumb.save(thumbnail_path, "JPEG", quality=80)
 - Thumbnail stays consistent with full image
 - Simple single-direction rotation (cw) is sufficient for most cases)
 
+### 14. Mobile-First Responsive Design
+
+**Decision:** Use mobile-first CSS with progressive enhancement for larger screens.
+
+```css
+/* Base: Mobile (2 columns) */
+.gallery-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+/* Tablet */
+@media (min-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+```
+
+**Mobile Improvements:**
+- 2-column gallery on mobile (vs 4+ on desktop)
+- Touch-friendly buttons (min 44px)
+- Full-width buttons on mobile
+- Responsive navigation
+- Optimized form inputs (prevents iOS zoom)
+- Full-width mobile-friendly layout
+
+**Rationale:**
+- Most guests access from phones
+- Touch targets must be minimum 44px for accessibility
+- Progressive enhancement: works on all devices, optimized on larger screens
+
 ## Features
 
 ### During Party (Local Network)
@@ -389,6 +428,7 @@ thumb.save(thumbnail_path, "JPEG", quality=80)
 | **Paginated Gallery** | 50 photos per page for performance |
 | **Sort Options** | Sort by newest, oldest, or alphabetical |
 | **Dark Mode** | Auto-detects system preference |
+| **Mobile-First Design** | Responsive layout optimized for phones |
 | Admin Panel | Delete photos, manage tags |
 
 ### Post-Party (via ngrok)

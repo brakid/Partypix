@@ -152,6 +152,23 @@ This document traces the conversation and requirements that led to the developme
 **Issue:** Clicking on selected tag didn't return to "All" view
 **Fix:** Updated template so selected tag link toggles back to `/gallery?sort=...` (no tag filter)
 
+### 8. Mobile Experience Review
+**Question:** Review website design - is it mobile first? What can be done to improve?
+
+**Brainstormed:**
+- Gallery grid too wide for mobile
+- Navigation crowded on small screens
+- Touch targets too small
+- No responsive breakpoints
+
+**Implemented:**
+- Mobile-first CSS with 2-column gallery (up to desktop 4+)
+- Touch-friendly buttons (min 44px)
+- Media queries for tablet (3 cols) and desktop (auto-fill)
+- Responsive navigation with smaller fonts
+- Full-width buttons on mobile
+- Form input optimizations (prevents iOS zoom)
+
 ---
 
 ## Files Created
