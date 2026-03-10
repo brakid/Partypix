@@ -1,0 +1,155 @@
+import base64
+import json
+
+from fastapi import APIRouter, Request, Form
+from fastapi.responses import RedirectResponse
+
+router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def get_session(request: Request) -> dict:
+    session_cookie = request.cookies.get("session", "")
+    if session_cookie:
+        try:
+            decoded = base64.b64decode(session_cookie).decode()
+            return json.loads(decoded)
+        except:
+            pass
+    return {}
+
+
+def load_config():
+    with open("config.json") as f:
+        return json.load(f)
+
+
+@router.get("")
+async def admin_page(request: Request):
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return RedirectResponse("/login?redirect=/admin", status_code=302)
+    
+    config = load_config()
+    
+    from app.database import SessionLocal
+    from app.models import Photo, Tag
+    
+    db = SessionLocal()
+    photos = db.query(Photo).order_by(Photo.upload_timestamp.desc()).all()
+    tags = db.query(Tag).all()
+    
+    photo_list = []
+    for p in photos:
+        photo_list.append({
+            "id": p.id,
+            "thumbnail_path": "/" + p.thumbnail_path if p.thumbnail_path else None,
+            "original_filename": p.original_filename,
+            "upload_timestamp": p.upload_timestamp.isoformat() if p.upload_timestamp else None,
+            "tags": [{"id": t.id, "label": t.label} for t in p.tags]
+        })
+    
+    db.close()
+    
+    return templates.TemplateResponse("admin.html", {
+        "request": {},
+        "current_path": "/admin",
+        "photos": photo_list,
+        "tags": [{"id": t.id, "label": t.label} for t in tags],
+        "app_title": config.get("app_title", "PartyPix")
+    })
+
+
+@router.post("/photo/{photo_id}/delete")
+async def delete_photo(request: Request, photo_id: str):
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return {"error": "unauthorized"}
+    
+    from app.database import SessionLocal
+    from app.models import Photo
+    
+    db = SessionLocal()
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    
+    if photo:
+        if os.path.exists(photo.storage_path):
+            os.remove(photo.storage_path)
+        if photo.thumbnail_path and os.path.exists(photo.thumbnail_path):
+            os.remove(photo.thumbnail_path)
+        
+        db.delete(photo)
+        db.commit()
+    
+    db.close()
+    
+    return RedirectResponse("/admin", status_code=302)
+
+
+@router.post("/tag")
+async def create_tag(request: Request, label: str = Form(...)):
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return {"error": "unauthorized"}
+    
+    import uuid
+    from app.database import SessionLocal
+    from app.models import Tag
+    
+    db = SessionLocal()
+    existing = db.query(Tag).filter(Tag.label == label).first()
+    if not existing:
+        tag = Tag(id=str(uuid.uuid4()), label=label)
+        db.add(tag)
+        db.commit()
+    
+    db.close()
+    
+    return RedirectResponse("/admin", status_code=302)
+
+
+@router.post("/photo/{photo_id}/tag")
+async def add_tag_to_photo(request: Request, photo_id: str, tag_id: str = Form(...)):
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return {"error": "unauthorized"}
+    
+    from app.database import SessionLocal
+    from app.models import Photo, Tag, photo_tags
+    
+    db = SessionLocal()
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    
+    if photo and tag:
+        stmt = photo_tags.insert().values(photo_id=photo_id, tag_id=tag_id)
+        db.execute(stmt)
+        db.commit()
+    
+    db.close()
+    
+    return RedirectResponse("/admin", status_code=302)
+
+
+@router.delete("/photo/{photo_id}/tag/{tag_id}")
+async def remove_tag_from_photo(request: Request, photo_id: str, tag_id: str):
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return {"error": "unauthorized"}
+    
+    from app.database import SessionLocal
+    from app.models import photo_tags
+    
+    db = SessionLocal()
+    stmt = photo_tags.delete().where(
+        (photo_tags.c.photo_id == photo_id) & (photo_tags.c.tag_id == tag_id)
+    )
+    db.execute(stmt)
+    db.commit()
+    db.close()
+    
+    return {"success": True}
+
+
+import os
+from fastapi import templating
+templates = templating.Jinja2Templates(directory="templates")

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>{% block title %}PartyPix{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% block header %}
+    <header>
+        <div class="container">
+            <h1>{{ app_title|default('PartyPix') }}</h1>
+            <nav>
+                <a href="/gallery" {% if current_path == '/gallery' %}class="active"{% endif %}>Gallery</a>
+                <a href="/upload" {% if current_path == '/upload' %}class="active"{% endif %}>Upload</a>
+                {% if is_admin %}
+                <a href="/admin" {% if current_path == '/admin' %}class="active"{% endif %}>Admin</a>
+                {% endif %}
+                <a href="/logout">Logout</a>
+            </nav>
+        </div>
+    </header>
+    {% endblock %}
+    
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <script src="/static/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

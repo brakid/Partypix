@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Gallery - {{ app_title }}{% endblock %}
+
+{% block content %}
+{% if success == 'uploaded' %}
+<div class="alert alert-success">Photo uploaded successfully!</div>
+{% endif %}
+
+{% if error == 'not_image' %}
+<div class="alert alert-error">Only image files are allowed.</div>
+{% endif %}
+
+<div class="filters">
+    <a href="/gallery" {% if not selected_tag %}class="active"{% endif %}>All</a>
+    {% for tag in tags %}
+    <a href="/gallery?tag={{ tag.label }}" {% if selected_tag == tag.label %}class="active"{% endif %}>{{ tag.label }}</a>
+    {% endfor %}
+</div>
+
+<div class="actions-bar">
+    <label>
+        <input type="checkbox" id="select-all"> Select All
+    </label>
+    <span id="selected-count" style="margin-left: auto; margin-right: 0.5rem;">0</span>
+    <button id="download-selected" class="btn" disabled>Download Selected</button>
+</div>
+
+{% if photos %}
+<div class="gallery-grid">
+    {% for photo in photos %}
+    <div class="photo-card">
+        <div class="checkbox-wrapper">
+            <input type="checkbox" class="photo-checkbox" value="{{ photo.id }}">
+        </div>
+        {% if photo.thumbnail_path %}
+        <img src="{{ photo.thumbnail_path }}" alt="{{ photo.original_filename }}">
+        {% else %}
+        <div style="height: 200px; background: #e5e7eb; display: flex; align-items: center; justify-content: center;">
+            No thumbnail
+        </div>
+        {% endif %}
+        {% if photo.tags %}
+        <div class="photo-tags">
+            {% for tag in photo.tags %}
+            <span class="tag">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No photos yet.</p>
+    <a href="/upload" class="btn" style="margin-top: 1rem;">Upload Photos</a>
+</div>
+{% endif %}
+
+<div id="photo-modal" class="modal">
+    <span id="modal-close" style="position: absolute; top: 1rem; right: 1rem; color: white; font-size: 2rem; cursor: pointer;">&times;</span>
+    <img id="modal-img" class="photo-fullview" src="" alt="Full size">
+</div>
+{% endblock %}

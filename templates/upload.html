@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Upload - {{ app_title }}{% endblock %}
+
+{% block content %}
+<div class="upload-section">
+    <h2>Upload Photos</h2>
+    <p style="color: var(--text-muted); margin: 1rem 0;">Select multiple photos from your device to share with everyone.</p>
+    
+    <form id="upload-form" method="POST" action="/upload" enctype="multipart/form-data">
+        <div class="dropzone" id="dropzone">
+            <p>Click to select or drag and drop photos here</p>
+        </div>
+        <input type="file" id="file-input" name="files" accept="image/*" multiple style="display: none;">
+    </form>
+    
+    <div id="upload-progress" style="margin-top: 1rem; display: none;">
+        <p>Uploading: <span id="upload-count">0</span> / <span id="upload-total">0</span></p>
+        <div style="background: #e5e7eb; border-radius: 0.25rem; height: 0.5rem; margin-top: 0.5rem;">
+            <div id="progress-bar" style="background: var(--primary); height: 100%; width: 0%; border-radius: 0.25rem; transition: width 0.3s;"></div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="/gallery" class="btn btn-secondary">View Gallery</a>
+    </div>
+</div>
+{% endblock %}

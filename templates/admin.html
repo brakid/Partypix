@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - {{ app_title }}{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 2rem;">
+    <h3>Manage Tags</h3>
+    <form method="POST" action="/admin/tag" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <input type="text" name="label" placeholder="New tag name" required style="flex: 1;">
+        <button type="submit" class="btn">Add Tag</button>
+    </form>
+    
+    {% if tags %}
+    <div style="margin-top: 1rem;">
+        {% for tag in tags %}
+        <span class="tag" style="margin: 0.25rem;">{{ tag.label }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<h2>Manage Photos</h2>
+
+{% if photos %}
+<div class="gallery-grid">
+    {% for photo in photos %}
+    <div class="photo-card">
+        {% if photo.thumbnail_path %}
+        <img src="{{ photo.thumbnail_path }}" alt="{{ photo.original_filename }}">
+        {% else %}
+        <div style="height: 200px; background: #e5e7eb; display: flex; align-items: center; justify-content: center;">
+            No thumbnail
+        </div>
+        {% endif %}
+        
+        <div style="padding: 0.5rem;">
+            <p style="font-size: 0.75rem; color: var(--text-muted);">{{ photo.original_filename }}</p>
+            
+            <div class="admin-actions" style="margin-top: 0.5rem;">
+                <form method="POST" action="/admin/photo/{{ photo.id }}/delete" onsubmit="return confirm('Delete this photo?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </div>
+            
+            <div style="margin-top: 0.5rem;">
+                <form method="POST" action="/admin/photo/{{ photo.id }}/tag" style="display: flex; gap: 0.25rem;">
+                    <select name="tag_id" required style="flex: 1; padding: 0.25rem; font-size: 0.75rem;">
+                        <option value="">Add tag...</option>
+                        {% for tag in tags %}
+                        <option value="{{ tag.id }}">{{ tag.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm">+</button>
+                </form>
+            </div>
+            
+            {% if photo.tags %}
+            <div class="photo-tags">
+                {% for tag in photo.tags %}
+                <span class="tag" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                    {{ tag.label }}
+                    <form method="DELETE" action="/admin/photo/{{ photo.id }}/tag/{{ tag.id }}" style="display: inline;">
+                        <button type="submit" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.75rem;">&times;</button>
+                    </form>
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No photos to manage.</p>
+</div>
+{% endif %}
+{% endblock %}
