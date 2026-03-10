@@ -4,6 +4,18 @@
 
 {% block content %}
 <div class="card" style="margin-bottom: 2rem;">
+    <h3>Upload Settings</h3>
+    <div style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem;">
+        <span>Guest uploads: <strong>{% if uploads_enabled %}Enabled{% else %}Disabled{% endif %}</strong></span>
+        <form method="POST" action="/admin/settings/uploads-toggle">
+            <button type="submit" class="btn {% if uploads_enabled %}btn-danger{% else %}btn{% endif %}">
+                {% if uploads_enabled %}Disable Uploads{% else %}Enable Uploads{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 2rem;">
     <h3>Manage Tags</h3>
     <form method="POST" action="/admin/tag" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
         <input type="text" name="label" placeholder="New tag name" required style="flex: 1;">

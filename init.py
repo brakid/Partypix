@@ -53,6 +53,7 @@ def init_database(db_path: str, title: str, guest_password: str, admin_password:
         "guest_password_hash": hash_password(guest_password),
         "admin_password_hash": hash_password(admin_password),
         "app_title": title,
+        "uploads_enabled": True,
     }
     
     with open("config.json", "w") as f:

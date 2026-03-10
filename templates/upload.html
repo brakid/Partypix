@@ -5,6 +5,8 @@
 {% block content %}
 <div class="upload-section">
     <h2>Upload Photos</h2>
+    
+    {% if uploads_enabled %}
     <p style="color: var(--text-muted); margin: 1rem 0;">Select multiple photos from your device to share with everyone.</p>
     
     <form id="upload-form" method="POST" action="/upload" enctype="multipart/form-data">
@@ -20,6 +22,11 @@
             <div id="progress-bar" style="background: var(--primary); height: 100%; width: 0%; border-radius: 0.25rem; transition: width 0.3s;"></div>
         </div>
     </div>
+    {% else %}
+    <div class="alert alert-error" style="margin: 1rem 0;">
+        <p>Uploads are currently disabled. Contact the host to enable uploads.</p>
+    </div>
+    {% endif %}
     
     <div style="margin-top: 2rem;">
         <a href="/gallery" class="btn btn-secondary">View Gallery</a>

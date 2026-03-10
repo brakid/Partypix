@@ -79,6 +79,7 @@ async def admin_page(request: Request, page: int = 1, sort: str = "newest"):
         "total_pages": total_pages,
         "total_photos": total_photos,
         "current_sort": sort,
+        "uploads_enabled": config.get("uploads_enabled", True),
         "app_title": config.get("app_title", "PartyPix")
     })
 
@@ -269,6 +270,22 @@ async def analytics_page(request: Request):
         "storage_used": storage_str,
         "recent_uploads": recent_count
     })
+
+
+@router.post("/settings/uploads-toggle")
+async def toggle_uploads(request: Request):
+    """Toggle upload enable/disable"""
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return RedirectResponse("/login?redirect=/admin", status_code=302)
+    
+    config = load_config()
+    config["uploads_enabled"] = not config.get("uploads_enabled", True)
+    
+    with open("config.json", "w") as f:
+        json.dump(config, f, indent=2)
+    
+    return RedirectResponse("/admin", status_code=302)
 
 
 import os

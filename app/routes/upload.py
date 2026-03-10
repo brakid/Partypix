@@ -100,12 +100,14 @@ async def upload_page(request: Request):
         return RedirectResponse(f"/login?redirect=/upload", status_code=302)
     
     config = load_config()
+    uploads_enabled = config.get("uploads_enabled", True)
     
     return templates.TemplateResponse("upload.html", {
         "request": {},
         "current_path": "/upload",
         "app_title": config.get("app_title", "PartyPix"),
-        "is_admin": session.get("role") == "admin"
+        "is_admin": session.get("role") == "admin",
+        "uploads_enabled": uploads_enabled
     })
 
 
@@ -114,6 +116,10 @@ async def upload_photos(request: Request, files: Union[list[UploadFile], None] =
     session = get_session(request)
     if session.get("role") not in ["guest", "admin"]:
         return RedirectResponse("/login", status_code=302)
+    
+    config = load_config()
+    if not config.get("uploads_enabled", True):
+        return RedirectResponse("/gallery?error=uploads_disabled", status_code=302)
     
     if not files:
         return RedirectResponse("/gallery?error=no_files", status_code=302)
