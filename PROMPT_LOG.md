@@ -148,6 +148,10 @@ This document traces the conversation and requirements that led to the developme
 - Sort: `?sort=newest|oldest|alpha` query param
 - Dark mode: CSS custom properties + localStorage toggle
 
+### 7. Tag Filter Toggle Behavior
+**Issue:** Clicking on selected tag didn't return to "All" view
+**Fix:** Updated template so selected tag link toggles back to `/gallery?sort=...` (no tag filter)
+
 ---
 
 ## Files Created

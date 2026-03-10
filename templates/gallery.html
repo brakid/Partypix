@@ -15,7 +15,7 @@
     <div class="filters">
         <a href="/gallery" {% if not selected_tag %}class="active"{% endif %}>All</a>
         {% for tag in tags %}
-        <a href="/gallery?tag={{ tag.label }}&sort={{ current_sort|default('newest') }}" {% if selected_tag == tag.label %}class="active"{% endif %}>{{ tag.label }}</a>
+        <a href="/gallery{% if selected_tag == tag.label %}?sort={{ current_sort|default('newest') }}{% else %}?tag={{ tag.label }}&sort={{ current_sort|default('newest') }}{% endif %}" {% if selected_tag == tag.label %}class="active"{% endif %}>{{ tag.label }}</a>
         {% endfor %}
     </div>
     
