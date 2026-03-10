@@ -190,6 +190,11 @@ photos_with_tags = db.query(photo_tags).distinct(photo_tags.c.photo_id).count()
 photos_with_tags = db.query(func.count(func.distinct(photo_tags.c.photo_id))).scalar() or 0
 ```
 
+### 11. Admin Links Not Showing
+**Issue:** Admin and Analytics links not showing in nav when logged in as admin on /admin page
+
+**Fix:** Added `is_admin: True` to template context in admin.py and analytics.py routes
+
 ---
 
 ## Files Created
