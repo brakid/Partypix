@@ -6,6 +6,8 @@ from fastapi.responses import RedirectResponse
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+PHOTOS_PER_PAGE = 50
+
 
 def get_session(request: Request) -> dict:
     session_cookie = request.cookies.get("session", "")
@@ -24,7 +26,7 @@ def load_config():
 
 
 @router.get("")
-async def admin_page(request: Request):
+async def admin_page(request: Request, page: int = 1):
     session = get_session(request)
     if session.get("role") != "admin":
         return RedirectResponse("/login?redirect=/admin", status_code=302)
@@ -35,7 +37,16 @@ async def admin_page(request: Request):
     from app.models import Photo, Tag
     
     db = SessionLocal()
-    photos = db.query(Photo).order_by(Photo.upload_timestamp.desc()).all()
+    
+    total_photos = db.query(Photo).count()
+    total_pages = (total_photos + PHOTOS_PER_PAGE - 1) // PHOTOS_PER_PAGE
+    
+    photos = db.query(Photo)\
+        .order_by(Photo.upload_timestamp.desc())\
+        .offset((page - 1) * PHOTOS_PER_PAGE)\
+        .limit(PHOTOS_PER_PAGE)\
+        .all()
+    
     tags = db.query(Tag).all()
     
     photo_list = []
@@ -55,6 +66,9 @@ async def admin_page(request: Request):
         "current_path": "/admin",
         "photos": photo_list,
         "tags": [{"id": t.id, "label": t.label} for t in tags],
+        "current_page": page,
+        "total_pages": total_pages,
+        "total_photos": total_photos,
         "app_title": config.get("app_title", "PartyPix")
     })
 

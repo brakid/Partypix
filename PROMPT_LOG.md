@@ -120,6 +120,15 @@ This document traces the conversation and requirements that led to the developme
 **Problem:** 405 Method Not Allowed when trying to delete tags  
 **Fix:** Changed DELETE endpoint to POST at `/admin/photo/{photo_id}/tag/{tag_id}/delete`
 
+### 5. Performance with Thousands of Images
+**Question:** How will the system perform with several thousand images?  
+**Discussion:** Brainstormed three approaches:
+- Infinite scroll: Modern but memory issues, hard to share URLs
+- Load More button: Good compromise but added complexity  
+- Pagination: Chosen for simplicity and performance
+
+**Decision:** Implement pagination (50 per page) - better memory management, URL sharing works, mobile-friendly
+
 ---
 
 ## Files Created

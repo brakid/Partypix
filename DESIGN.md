@@ -267,6 +267,37 @@ async def upload_photos(request: Request, files: Union[list[UploadFile], None] =
 - Slightly slower than parallel upload (mitigated by sequential approach)
 - Requires JavaScript for best experience (fallback to single upload works)
 
+### 10. Pagination vs Infinite Scroll
+
+**Decision:** Use server-side pagination (50 photos per page) instead of infinite scroll.
+
+```python
+PHOTOS_PER_PAGE = 50
+
+# Database query with pagination
+photos = query.order_by(Photo.upload_timestamp.desc())\
+    .offset((page - 1) * PHOTOS_PER_PAGE)\
+    .limit(PHOTOS_PER_PAGE)\
+    .all()
+```
+
+**Alternatives Considered:**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| Infinite Scroll | Modern feel, seamless | Memory grows, mobile janky, hard to share |
+| Load More Button | Good UX | Added complexity |
+| **Pagination (chosen)** | Predictable, shareable URLs, memory-efficient | Requires clicking |
+
+**Rationale:**
+- **Memory efficiency**: With thousands of photos, infinite scroll causes browser memory issues
+- **URL sharing**: After-party guests may share links - pagination URLs work better
+- **Mobile performance**: Infinite scroll can be jittery on mobile browsers
+- **Intent-based**: Party guests are looking for specific photos - pagination supports this better
+- **Simplicity**: Less JavaScript complexity, more reliable
+
+**Trade-off:** Requires clicking to see more, but acceptable for the use case
+
 ## Features
 
 ### During Party (Local Network)
@@ -280,6 +311,7 @@ async def upload_photos(request: Request, files: Union[list[UploadFile], None] =
 | Upload Progress | Visual indicator showing upload status |
 | Live Uploads | Photos appear in gallery immediately |
 | Thumbnail Grid | Fast-loading thumbnail gallery |
+| **Paginated Gallery** | 50 photos per page for performance |
 | Admin Panel | Delete photos, manage tags |
 
 ### Post-Party (via ngrok)
@@ -288,6 +320,7 @@ async def upload_photos(request: Request, files: Union[list[UploadFile], None] =
 |---------|-------------|
 | Remote Access | Access via ngrok tunnel URL |
 | Tag Filtering | Filter photos by AI-generated tags |
+| **Pagination** | Browse large collections efficiently |
 | Photo Selection | Checkbox to select multiple photos |
 | ZIP Download | Download selected photos as ZIP |
 | Browse Gallery | Full-resolution photo viewing |

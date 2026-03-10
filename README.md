@@ -9,6 +9,7 @@ Photo sharing platform for parties. Guests upload photos from their phones to a 
 - Drag and drop support for uploads
 - Upload progress indicator
 - Live shared photo pool during the party
+- **Paginated gallery** - 50 photos per page for fast loading
 - Automatic thumbnail generation for fast browsing
 - Admin panel for moderation (delete photos, add tags)
 - AI-powered semantic tagging using Ollama (post-party)

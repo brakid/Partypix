@@ -9,6 +9,15 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 
 
+def create_templates():
+    def range_func(start, stop):
+        return range(start, stop)
+    
+    env = Jinja2Templates(directory="templates")
+    env.env.globals['range'] = range_func
+    return env
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not os.path.exists("config.json"):
@@ -26,7 +35,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/storage", StaticFiles(directory="storage"), name="storage")
-templates = Jinja2Templates(directory="templates")
+templates = create_templates()
 
 from app.routes import upload, gallery, admin, download
 
