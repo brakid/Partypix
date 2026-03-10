@@ -169,6 +169,15 @@ This document traces the conversation and requirements that led to the developme
 - Full-width buttons on mobile
 - Form input optimizations (prevents iOS zoom)
 
+### 9. Disable Uploads Feature
+**Asked:** As admin, I want to disable new uploads after the party so guests can only view existing pictures
+
+**Implemented:**
+- Added `uploads_enabled` to config.json
+- POST `/admin/settings/uploads-toggle` to toggle
+- Upload page shows message when disabled
+- Upload POST returns error when disabled
+
 ---
 
 ## Files Created

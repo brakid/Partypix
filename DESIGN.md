@@ -429,6 +429,7 @@ thumb.save(thumbnail_path, "JPEG", quality=80)
 | **Sort Options** | Sort by newest, oldest, or alphabetical |
 | **Dark Mode** | Auto-detects system preference |
 | **Mobile-First Design** | Responsive layout optimized for phones |
+| **Upload Toggle** | Enable/disable guest uploads |
 | Admin Panel | Delete photos, manage tags |
 
 ### Post-Party (via ngrok)

@@ -9,6 +9,7 @@ Photo sharing platform for parties. Guests upload photos from their phones to a 
 - Drag and drop support for uploads
 - Upload progress indicator
 - Live shared photo pool during the party
+- **Upload toggle** - Admin can disable uploads after the party
 - **Paginated gallery** - 50 photos per page for fast loading
 - **Sort options** - Newest, oldest, or alphabetical
 - Automatic thumbnail generation for fast browsing
