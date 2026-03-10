@@ -79,6 +79,7 @@ This document traces the conversation and requirements that led to the developme
 - **Framework:** Python/FastAPI
 - **Multi-party:** No single instance - expect to clone setup for repeated parties
 - **AI Tagging:** Local Ollama script (semantic object detection - cake, presents, dancing, music, etc.)
+- **AI Model:** qwen2.5vl:7b (chosen for M3 Mac with 24GB RAM)
 
 ---
 
@@ -97,7 +98,7 @@ This document traces the conversation and requirements that led to the developme
 1. **Simplified Schema:** Removed `parties` table since single-party at a time
 2. **Config storage:** JSON file for passwords and app title
 3. **AI tagging:** Standalone script (Option A), not integrated into admin UI
-4. **File naming:** UUID-based filenames to avoid collisions
+4. **AI Model:** Default to qwen2.5vl:7b for M3 Mac compatibility (supports --model flag)
 
 ---
 
@@ -114,6 +115,10 @@ This document traces the conversation and requirements that led to the developme
 ### 3. Multi-Photo Upload Not Working
 **Problem:** `error=no_files` - files not reaching backend  
 **Fix:** Changed input name from `file` to `files` to match backend parameter
+
+### 4. DELETE Method Not Supported in HTML Forms
+**Problem:** 405 Method Not Allowed when trying to delete tags  
+**Fix:** Changed DELETE endpoint to POST at `/admin/photo/{photo_id}/tag/{tag_id}/delete`
 
 ---
 

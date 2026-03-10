@@ -59,7 +59,7 @@
                 {% for tag in photo.tags %}
                 <span class="tag" style="display: inline-flex; align-items: center; gap: 0.25rem;">
                     {{ tag.label }}
-                    <form method="DELETE" action="/admin/photo/{{ photo.id }}/tag/{{ tag.id }}" style="display: inline;">
+                    <form method="POST" action="/admin/photo/{{ photo.id }}/tag/{{ tag.id }}/delete" style="display: inline;">
                         <button type="submit" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.75rem;">&times;</button>
                     </form>
                 </span>

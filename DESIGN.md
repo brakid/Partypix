@@ -393,11 +393,14 @@ ngrok http 8000 --authtoken <your-token>
 # Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
-# Pull vision model
-ollama pull llama3.2-vision
+# Pull vision model (qwen2.5vl:7b recommended for M3 Mac)
+ollama pull qwen2.5vl:7b
 
 # Run tagging
 python scripts/tag_photos.py
+
+# Or use a different model
+python scripts/tag_photos.py --model llama3.2-vision:11b
 ```
 
 ## Future Enhancements

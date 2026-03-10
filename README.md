@@ -59,9 +59,17 @@ Share the ngrok URL with guests for post-party browsing/download.
 Requires [Ollama](https://ollama.ai/) installed with a vision model:
 
 ```bash
+# Pull the vision model (qwen2.5vl:7b is default)
+ollama pull qwen2.5vl:7b
+
+# Start Ollama
 ollama serve
-# In another terminal:
+
+# In another terminal, run the tagging script:
 python scripts/tag_photos.py
+
+# Or specify a different model:
+python scripts/tag_photos.py --model llama3.2-vision:11b
 ```
 
 This analyzes all photos and adds semantic tags like "cake", "dancing", "group photo", etc.

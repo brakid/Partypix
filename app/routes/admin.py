@@ -130,7 +130,7 @@ async def add_tag_to_photo(request: Request, photo_id: str, tag_id: str = Form(.
     return RedirectResponse("/admin", status_code=302)
 
 
-@router.delete("/photo/{photo_id}/tag/{tag_id}")
+@router.post("/photo/{photo_id}/tag/{tag_id}/delete")
 async def remove_tag_from_photo(request: Request, photo_id: str, tag_id: str):
     session = get_session(request)
     if session.get("role") != "admin":
@@ -147,7 +147,7 @@ async def remove_tag_from_photo(request: Request, photo_id: str, tag_id: str):
     db.commit()
     db.close()
     
-    return {"success": True}
+    return RedirectResponse("/admin", status_code=302)
 
 
 import os
