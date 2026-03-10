@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+from typing import Optional
 
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import RedirectResponse
@@ -28,7 +29,7 @@ def load_config():
 
 
 @router.get("/gallery")
-async def gallery(request: Request, tag: str = None, page: int = 1, error: str = None, success: str = None):
+async def gallery(request: Request, tag: str = None, page: int = 1, sort: str = "newest", error: str = None, success: str = None):
     session = get_session(request)
     if session.get("role") not in ["guest", "admin"]:
         return RedirectResponse(f"/login?redirect=/gallery", status_code=302)
@@ -44,10 +45,18 @@ async def gallery(request: Request, tag: str = None, page: int = 1, error: str =
     if tag:
         base_query = base_query.join(Photo.tags).filter(Tag.label == tag)
     
+    # Apply sorting
+    if sort == "oldest":
+        order = Photo.upload_timestamp.asc()
+    elif sort == "alpha":
+        order = Photo.original_filename.asc()
+    else:  # newest (default)
+        order = Photo.upload_timestamp.desc()
+    
     total_photos = base_query.count()
     total_pages = (total_photos + PHOTOS_PER_PAGE - 1) // PHOTOS_PER_PAGE
     
-    photos = base_query.order_by(Photo.upload_timestamp.desc())\
+    photos = base_query.order_by(order)\
         .offset((page - 1) * PHOTOS_PER_PAGE)\
         .limit(PHOTOS_PER_PAGE)\
         .all()
@@ -75,6 +84,7 @@ async def gallery(request: Request, tag: str = None, page: int = 1, error: str =
         "current_page": page,
         "total_pages": total_pages,
         "total_photos": total_photos,
+        "current_sort": sort,
         "app_title": config.get("app_title", "PartyPix"),
         "is_admin": session.get("role") == "admin",
         "error": error,
@@ -83,7 +93,7 @@ async def gallery(request: Request, tag: str = None, page: int = 1, error: str =
 
 
 @router.get("/api/photos")
-async def api_photos(request: Request, tag: str = None, page: int = 1):
+async def api_photos(request: Request, tag: str = None, page: int = 1, sort: str = "newest"):
     session = get_session(request)
     if session.get("role") not in ["guest", "admin"]:
         return {"error": "unauthorized"}
@@ -96,8 +106,16 @@ async def api_photos(request: Request, tag: str = None, page: int = 1):
     if tag:
         query = query.join(Photo.tags).filter(Tag.label == tag)
     
+    # Apply sorting
+    if sort == "oldest":
+        order = Photo.upload_timestamp.asc()
+    elif sort == "alpha":
+        order = Photo.original_filename.asc()
+    else:
+        order = Photo.upload_timestamp.desc()
+    
     total = query.count()
-    photos = query.order_by(Photo.upload_timestamp.desc())\
+    photos = query.order_by(order)\
         .offset((page - 1) * PHOTOS_PER_PAGE)\
         .limit(PHOTOS_PER_PAGE)\
         .all()
@@ -108,6 +126,7 @@ async def api_photos(request: Request, tag: str = None, page: int = 1):
             "id": p.id,
             "thumbnail": "/" + p.thumbnail_path if p.thumbnail_path else None,
             "full": f"/api/photos/{p.id}/full",
+            "download": f"/api/photos/{p.id}/download",
             "tags": [t.label for t in p.tags]
         })
     

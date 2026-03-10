@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code - {{ app_title }}{% endblock %}
+
+{% block content %}
+<div class="qr-page" style="text-align: center; padding: 2rem;">
+    <h2>Scan to Access Party Photos</h2>
+    <p style="color: var(--text-muted); margin: 1rem 0;">Scan this QR code with your phone's camera to access the photo gallery.</p>
+    
+    <div class="qr-container" style="margin: 2rem auto; max-width: 400px;">
+        <img src="{{ qr_image }}" alt="QR Code" style="max-width: 100%; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    </div>
+    
+    <div class="qr-info" style="background: var(--card-bg); padding: 1.5rem; border-radius: 0.5rem; max-width: 400px; margin: 0 auto;">
+        <p><strong>URL:</strong> <a href="{{ url }}">{{ url }}</a></p>
+        <p><strong>Password:</strong> {{ password }}</p>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="/gallery" class="btn">View Gallery</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,10 +1,11 @@
 import base64
 import io
 import json
+import os
 import zipfile
 
 from fastapi import APIRouter, Request, Form
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 
 router = APIRouter(prefix="", tags=["download"])
 
@@ -18,6 +19,40 @@ def get_session(request: Request) -> dict:
         except:
             pass
     return {}
+
+
+@router.get("/api/photos/{photo_id}/download")
+async def download_single_photo(photo_id: str):
+    """Download a single photo (not as ZIP)"""
+    from app.database import SessionLocal
+    from app.models import Photo
+    
+    db = SessionLocal()
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    db.close()
+    
+    if not photo:
+        return {"error": "not found"}
+    
+    if not os.path.exists(photo.storage_path):
+        return {"error": "file not found"}
+    
+    # Determine content type
+    ext = photo.filename.lower().split('.')[-1] if '.' in photo.filename else 'jpg'
+    content_types = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp'
+    }
+    content_type = content_types.get(ext, 'image/jpeg')
+    
+    return FileResponse(
+        photo.storage_path,
+        media_type=content_type,
+        headers={"Content-Disposition": f"attachment; filename={photo.original_filename}"}
+    )
 
 
 @router.post("/download")

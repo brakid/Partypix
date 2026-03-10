@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - {{ app_title }}{% endblock %}
+
+{% block content %}
+<h2>Party Analytics</h2>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0;">
+    <div class="card" style="text-align: center;">
+        <h3 style="font-size: 2rem; color: var(--primary);">{{ photo_count }}</h3>
+        <p>Total Photos</p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <h3 style="font-size: 2rem; color: var(--primary);">{{ tag_count }}</h3>
+        <p>Unique Tags</p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <h3 style="font-size: 2rem; color: var(--primary);">{{ photos_with_tags }}</h3>
+        <p>Photos with Tags</p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <h3 style="font-size: 2rem; color: var(--primary);">{{ storage_used }}</h3>
+        <p>Storage Used</p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <h3 style="font-size: 2rem; color: var(--success);">{{ recent_uploads }}</h3>
+        <p>Uploads (24h)</p>
+    </div>
+</div>
+
+<div style="margin-top: 2rem;">
+    <a href="/admin" class="btn btn-secondary">Back to Admin</a>
+</div>
+{% endblock %}

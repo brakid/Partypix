@@ -11,11 +11,22 @@
 <div class="alert alert-error">Only image files are allowed.</div>
 {% endif %}
 
-<div class="filters">
-    <a href="/gallery" {% if not selected_tag %}class="active"{% endif %}>All</a>
-    {% for tag in tags %}
-    <a href="/gallery?tag={{ tag.label }}" {% if selected_tag == tag.label %}class="active"{% endif %}>{{ tag.label }}</a>
-    {% endfor %}
+<div class="filters-and-sort" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div class="filters">
+        <a href="/gallery" {% if not selected_tag %}class="active"{% endif %}>All</a>
+        {% for tag in tags %}
+        <a href="/gallery?tag={{ tag.label }}&sort={{ current_sort|default('newest') }}" {% if selected_tag == tag.label %}class="active"{% endif %}>{{ tag.label }}</a>
+        {% endfor %}
+    </div>
+    
+    <div class="sort-options">
+        <label for="sort-select" style="margin-right: 0.5rem;">Sort:</label>
+        <select id="sort-select" onchange="window.location.href=this.value" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+            <option value="/gallery?sort=newest{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" {% if current_sort == 'newest' %}selected{% endif %}>Newest first</option>
+            <option value="/gallery?sort=oldest{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+            <option value="/gallery?sort=alpha{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" {% if current_sort == 'alpha' %}selected{% endif %}>Alphabetical</option>
+        </select>
+    </div>
 </div>
 
 <div class="actions-bar">
@@ -40,6 +51,10 @@
             No thumbnail
         </div>
         {% endif %}
+        <div style="padding: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ photo.original_filename }}</span>
+            <a href="/api/photos/{{ photo.id }}/download" class="btn btn-sm" download>Download</a>
+        </div>
         {% if photo.tags %}
         <div class="photo-tags">
             {% for tag in photo.tags %}

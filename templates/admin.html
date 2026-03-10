@@ -21,6 +21,16 @@
 
 <h2>Manage Photos</h2>
 
+<div class="sort-options" style="margin-bottom: 1rem;">
+    <label for="sort-select" style="margin-right: 0.5rem;">Sort:</label>
+    <select id="sort-select" onchange="window.location.href=this.value" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+        <option value="/admin?sort=newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest first</option>
+        <option value="/admin?sort=oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+        <option value="/admin?sort=alpha" {% if current_sort == 'alpha' %}selected{% endif %}>Alphabetical</option>
+    </select>
+    <span style="margin-left: 1rem; color: var(--text-muted);">({{ total_photos }} photos total)</span>
+</div>
+
 {% if photos %}
 <div class="gallery-grid">
     {% for photo in photos %}
@@ -36,10 +46,14 @@
         <div style="padding: 0.5rem;">
             <p style="font-size: 0.75rem; color: var(--text-muted);">{{ photo.original_filename }}</p>
             
-            <div class="admin-actions" style="margin-top: 0.5rem;">
+            <div class="admin-actions" style="margin-top: 0.5rem; display: flex; gap: 0.25rem;">
+                <form method="POST" action="/admin/photo/{{ photo.id }}/rotate">
+                    <button type="submit" class="btn btn-sm" title="Rotate clockwise">Rotate ↻</button>
+                </form>
                 <form method="POST" action="/admin/photo/{{ photo.id }}/delete" onsubmit="return confirm('Delete this photo?');">
                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                 </form>
+                <a href="/api/photos/{{ photo.id }}/download" class="btn btn-sm" download>Download</a>
             </div>
             
             <div style="margin-top: 0.5rem;">

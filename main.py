@@ -3,6 +3,8 @@ import os
 import json
 from contextlib import asynccontextmanager
 
+from typing import Optional
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -57,6 +59,50 @@ async def login_page(request: Request, redirect: str = "/gallery"):
         "redirect": redirect,
         "app_title": "PartyPix"
     })
+
+
+@app.get("/qr")
+async def qr_page(request: Request, url: Optional[str] = None, password: Optional[str] = None):
+    """QR Code page showing URL for guests to access"""
+    config = load_config()
+    
+    # Use provided URL or show placeholder for configuration
+    qr_url = url or "http://YOUR-PI-ADDRESS:8000"
+    qr_password = password or "[password]"
+    
+    # Generate QR code
+    import qrcode
+    import io
+    import base64
+    import qrcode
+    from qrcode.image.pil import PilImage
+    
+    qr = qrcode.QRCode(box_size=10, border=4)
+    qr.add_data(qr_url)
+    qr.make(fit=True)
+    
+    img: PilImage = qr.make_image(image_factory=PilImage)
+    
+    # Convert to base64 for embedding in HTML
+    buffer = io.BytesIO()
+    img.save(buffer)
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+    qr_image = f"data:image/png;base64,{qr_base64}"
+    
+    return templates.TemplateResponse("qr.html", {
+        "request": {},
+        "current_path": "/qr",
+        "app_title": config.get("app_title", "PartyPix"),
+        "is_admin": False,
+        "qr_image": qr_image,
+        "url": qr_url,
+        "password": qr_password
+    })
+
+
+def load_config():
+    with open("config.json") as f:
+        return json.load(f)
 
 
 if __name__ == "__main__":
