@@ -73,6 +73,7 @@ async def admin_page(request: Request, page: int = 1, sort: str = "newest"):
     return templates.TemplateResponse("admin.html", {
         "request": {},
         "current_path": "/admin",
+        "is_admin": True,
         "photos": photo_list,
         "tags": [{"id": t.id, "label": t.label} for t in tags],
         "current_page": page,
@@ -267,6 +268,7 @@ async def analytics_page(request: Request):
     return templates.TemplateResponse("analytics.html", {
         "request": {},
         "current_path": "/admin/analytics",
+        "is_admin": True,
         "app_title": config.get("app_title", "PartyPix"),
         "photo_count": photo_count,
         "tag_count": tag_count,
