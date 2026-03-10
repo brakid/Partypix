@@ -4,14 +4,18 @@ Photo sharing platform for parties. Guests upload photos from their phones to a 
 
 ## Features
 
-- QR code access with shared password
+- **QR code generator** - Generate scannable QR codes for guest access
 - **Multi-photo upload** - select and upload multiple photos at once
 - Drag and drop support for uploads
 - Upload progress indicator
 - Live shared photo pool during the party
 - **Paginated gallery** - 50 photos per page for fast loading
+- **Sort options** - Newest, oldest, or alphabetical
 - Automatic thumbnail generation for fast browsing
+- **Single photo download** - Download individual photos
+- **Photo rotation** - Rotate photos 90° clockwise
 - Admin panel for moderation (delete photos, add tags)
+- **Analytics dashboard** - Photo count, tags, storage usage
 - AI-powered semantic tagging using Ollama (post-party)
 - Photo selection and ZIP download
 - PWA support (add to home screen)
@@ -45,7 +49,9 @@ This creates:
 python main.py --host 0.0.0.0 --port 8000
 ```
 
-Guests access via `http://<pi-ip>:8000`. Display QR code at the venue.
+Guests access via `http://<pi-ip>:8000`. Display the QR code at the venue:
+- Visit `/qr` to see the QR code
+- Add `?url=<your-url>` to customize the URL (e.g., `/qr?url=http://192.168.1.100:8000`)
 
 ### 4. Post-Party Access (with ngrok)
 
