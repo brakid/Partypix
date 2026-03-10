@@ -3,15 +3,22 @@
 AI Tagging Script for PartyPix
 
 Run this script after the party to automatically tag photos using Ollama.
-Requires Ollama with a vision model (e.g., llama3.2-vision) installed.
+Requires Ollama with a vision model installed.
 
 Usage:
-    python scripts/tag_photos.py
+    python scripts/tag_photos.py                    # Uses default model (qwen2.5vl:7b)
+    python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom model
+
+Supported models (Ollama):
+    - qwen2.5vl:7b       (default, best for M3 Mac)
+    - llama3.2-vision:11b
+    - moondream:latest    (lightweight)
 """
 
 import os
 import sys
 import uuid
+import argparse
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,10 +26,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.database import SessionLocal
 from app.models import Photo, Tag, photo_tags
 
+DEFAULT_MODEL = "qwen2.5vl:7b"
 
-def tag_photos():
-    print("Starting AI tagging process...")
-    print("Make sure Ollama is running with a vision model (e.g., llama3.2-vision)")
+
+def tag_photos(model: str = DEFAULT_MODEL):
+    print(f"Starting AI tagging process...")
+    print(f"Using model: {model}")
+    print(f"Make sure Ollama is running: ollama serve")
     print()
     
     try:
@@ -51,7 +61,7 @@ def tag_photos():
             
             try:
                 response = ollama.chat(
-                    model='llama3.2-vision',
+                    model=model,
                     messages=[{
                         'role': 'user',
                         'content': '''Describe this image with 3-8 comma-separated keywords for objects, activities, and scenes. 
@@ -100,6 +110,10 @@ Only respond with the keywords, nothing else.''',
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="AI Tagging Script for PartyPix")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama vision model (default: {DEFAULT_MODEL})")
+    args = parser.parse_args()
+    
     project_root = Path(__file__).parent.parent
     os.chdir(project_root)
     
@@ -107,4 +121,4 @@ if __name__ == "__main__":
         print("ERROR: Database not found. Run init.py first.")
         sys.exit(1)
     
-    tag_photos()
+    tag_photos(model=args.model)
