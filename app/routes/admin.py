@@ -235,8 +235,9 @@ async def analytics_page(request: Request):
     # Tag count
     tag_count = db.query(Tag).count()
     
-    # Photos with tags
-    photos_with_tags = db.query(photo_tags).distinct(photo_tags.c.photo_id).count()
+    # Photos with tags (count unique photos that have at least one tag)
+    from sqlalchemy import func
+    photos_with_tags = db.query(func.count(func.distinct(photo_tags.c.photo_id))).scalar() or 0
     
     # Storage used
     total_size = 0
