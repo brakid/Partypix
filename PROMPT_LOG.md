@@ -129,6 +129,25 @@ This document traces the conversation and requirements that led to the developme
 
 **Decision:** Implement pagination (50 per page) - better memory management, URL sharing works, mobile-friendly
 
+### 6. New Feature Requests from Customer Review
+**Asked:** What other wishes might customers have?
+
+**Brainstormed:**
+- Single photo download
+- QR code generator
+- Analytics (photo count)
+- Photo rotation
+- Sort options (age, filename)
+- Dark mode
+
+**Implemented:**
+- Single download: `/api/photos/{id}/download` endpoint
+- QR code: `/qr` route with configurable URL
+- Analytics: `/admin/analytics` with photo count, tags, storage
+- Rotation: `/admin/photo/{id}/rotate` POST endpoint
+- Sort: `?sort=newest|oldest|alpha` query param
+- Dark mode: CSS custom properties + localStorage toggle
+
 ---
 
 ## Files Created
@@ -151,7 +170,9 @@ This document traces the conversation and requirements that led to the developme
 16. `templates/upload.html` - Upload page
 17. `templates/gallery.html` - Photo gallery
 18. `templates/admin.html` - Admin panel
-19. `scripts/tag_photos.py` - Ollama tagging
+19. `templates/qr.html` - QR code generator
+20. `templates/analytics.html` - Analytics dashboard
+21. `scripts/tag_photos.py` - Ollama tagging
 20. `README.md` - Usage documentation
 21. `DESIGN.md` - Architecture & design decisions
 22. `.gitignore` - Git ignore patterns

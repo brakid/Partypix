@@ -298,6 +298,81 @@ photos = query.order_by(Photo.upload_timestamp.desc())\
 
 **Trade-off:** Requires clicking to see more, but acceptable for the use case
 
+### 11. Dark Mode Implementation
+
+**Decision:** Use CSS custom properties with media query for auto-detection and localStorage for manual toggle.
+
+```css
+/* CSS Custom Properties */
+:root {
+  --bg: #fafafa;
+  --text: #1f2937;
+}
+
+/* Auto-detect system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111827;
+    --text: #f9fafb;
+  }
+}
+
+/* Manual toggle class */
+body.dark {
+  --bg: #111827;
+  --text: #f9fafb;
+}
+```
+
+**Rationale:**
+- Zero JavaScript required for basic functionality
+- Respects user privacy (no tracking)
+- Smooth transition between modes
+- Persists preference across sessions
+
+### 12. QR Code Generation
+
+**Decision:** Generate QR codes server-side using qrcode library and embed as base64.
+
+```python
+import qrcode
+import io
+import base64
+
+qr = qrcode.QRCode(box_size=10, border=4)
+qr.add_data(url)
+img = qr.make_image()
+buffer = io.BytesIO()
+img.save(buffer)
+qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+```
+
+**Rationale:**
+- No client-side dependencies
+- Customizable URL parameter
+- Works without JavaScript
+- Simple to implement
+
+### 13. Photo Rotation
+
+**Decision:** Rotate 90° clockwise, regenerate thumbnail, save permanently.
+
+```python
+img = Image.open(photo.storage_path)
+img = img.rotate(-90, expand=True)
+img.save(photo.storage_path)
+
+# Regenerate thumbnail
+thumb = Image.open(photo.storage_path)
+thumb.thumbnail((300, 300), Image.LANCZOS)
+thumb.save(thumbnail_path, "JPEG", quality=80)
+```
+
+**Rationale:**
+- Permanent rotation matches user intent
+- Thumbnail stays consistent with full image
+- Simple single-direction rotation (cw) is sufficient for most cases)
+
 ## Features
 
 ### During Party (Local Network)
@@ -312,6 +387,8 @@ photos = query.order_by(Photo.upload_timestamp.desc())\
 | Live Uploads | Photos appear in gallery immediately |
 | Thumbnail Grid | Fast-loading thumbnail gallery |
 | **Paginated Gallery** | 50 photos per page for performance |
+| **Sort Options** | Sort by newest, oldest, or alphabetical |
+| **Dark Mode** | Auto-detects system preference |
 | Admin Panel | Delete photos, manage tags |
 
 ### Post-Party (via ngrok)
@@ -321,17 +398,22 @@ photos = query.order_by(Photo.upload_timestamp.desc())\
 | Remote Access | Access via ngrok tunnel URL |
 | Tag Filtering | Filter photos by AI-generated tags |
 | **Pagination** | Browse large collections efficiently |
+| **Sort Options** | Sort by newest, oldest, or alphabetical |
 | Photo Selection | Checkbox to select multiple photos |
+| **Single Download** | Download individual photos |
 | ZIP Download | Download selected photos as ZIP |
 | Browse Gallery | Full-resolution photo viewing |
+| **Dark Mode** | Manual toggle available |
 
 ### Admin Features
 
 | Feature | Description |
 |---------|-------------|
 | Photo Deletion | Remove unwanted photos |
+| **Photo Rotation** | Rotate photos 90° clockwise |
 | Manual Tagging | Add/remove tags manually |
 | Tag Management | Create new tags |
+| **Analytics Dashboard** | Photo count, tags, storage usage |
 | AI Tagging Script | Run Ollama to auto-tag |
 
 ## File Structure
@@ -363,7 +445,9 @@ Partypix/
 │   ├── login.html       # Password entry
 │   ├── upload.html      # Upload page
 │   ├── gallery.html     # Photo gallery
-│   └── admin.html       # Admin panel
+│   ├── admin.html       # Admin panel
+│   ├── qr.html          # QR code generator
+│   └── analytics.html   # Analytics dashboard
 ├── storage/
 │   ├── photos/          # Full-size images
 │   └── thumbnails/      # 300px thumbnails

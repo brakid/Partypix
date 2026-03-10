@@ -18,6 +18,7 @@ Photo sharing platform for parties. Guests upload photos from their phones to a 
 - **Analytics dashboard** - Photo count, tags, storage usage
 - AI-powered semantic tagging using Ollama (post-party)
 - Photo selection and ZIP download
+- **Dark mode** - Auto-detects system preference, manual toggle available
 - PWA support (add to home screen)
 
 ## Setup
@@ -117,6 +118,23 @@ Partypix/
 - USB storage for photos (recommended)
 - ngrok (for post-party access)
 - Ollama + vision model (for AI tagging)
+
+## Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Redirects to gallery |
+| `/login` | Password entry |
+| `/gallery` | Photo gallery (requires login) |
+| `/upload` | Upload photos |
+| `/qr` | QR code generator |
+| `/admin` | Admin panel |
+| `/admin/analytics` | Analytics dashboard |
+| `/download` | ZIP download (POST) |
+| `/api/photos/{id}/download` | Single photo download |
+| `/api/photos/{id}/full` | Full-size photo |
+| `/admin/photo/{id}/rotate` | Rotate photo (POST) |
+| `/admin/photo/{id}/delete` | Delete photo (POST) |
 
 ## License
 
