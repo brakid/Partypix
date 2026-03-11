@@ -13,6 +13,7 @@
 
 <div class="filters-and-sort" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
     <div class="filters">
+        <span style="margin-right: 0.5rem; color: var(--text-muted);">Tag:</span>
         <a href="/gallery" {% if not selected_tag and not selected_face %}class="active"{% endif %}>All</a>
         {% for tag in tags %}
         <a href="/gallery{% if selected_tag == tag.label %}?sort={{ current_sort|default('newest') }}{% else %}?tag={{ tag.label }}&sort={{ current_sort|default('newest') }}{% endif %}" {% if selected_tag == tag.label %}class="active"{% endif %}>{{ tag.label }}</a>

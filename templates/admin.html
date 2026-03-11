@@ -43,41 +43,28 @@
         Click a face to select it, then click another to merge. Click [x] to delete a face.
     </p>
     
-    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
         {% for face in faces %}
         <div id="face-card-{{ face.id }}" class="face-card" 
-             onclick="handleFaceClick('{{ face.id }}', event)"
-             style="text-align: center; min-width: 100px; padding: 0.5rem; border-radius: 0.5rem; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;">
+             onclick="handleFaceClick('{{ face.id }}', event)">
             {% if face.thumbnail %}
-            <img src="{{ face.thumbnail }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border);">
+            <img src="{{ face.thumbnail }}" alt="{{ face.name }}">
             {% else %}
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                <span style="font-size: 2rem; color: var(--text-muted);">?</span>
-            </div>
+            <div class="placeholder">?</div>
             {% endif %}
-            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;">
-                <span onclick="event.stopPropagation(); renameFace('{{ face.id }}', '{{ face.name or 'Person' }}')"
-                      style="color: var(--primary); cursor: pointer; font-size: 0.875rem;">
+            <div class="face-info">
+                <span onclick="event.stopPropagation(); renameFace('{{ face.id }}', '{{ face.name or 'Person' }}')">
                     {{ face.name or 'Unknown' }}
                 </span>
-                <button onclick="event.stopPropagation(); deleteFace('{{ face.id }}')"
-                        title="Delete face"
-                        style="background: #ef4444; color: white; border: none; 
-                               border-radius: 50%; width: 20px; height: 20px; 
-                               cursor: pointer; font-size: 12px; line-height: 1;">x</button>
+                <form method="POST" action="/admin/face/{{ face.id }}/delete" style="display: inline;" onsubmit="return confirm('Delete this face from all photos?');">
+                    <button type="submit">&times;</button>
+                </form>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
-
-<style>
-.face-card.selected {
-    border-color: #3b82f6 !important;
-    background: #eff6ff;
-}
-</style>
 
 <script>
 let selectedFaceId = null;

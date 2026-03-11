@@ -148,6 +148,31 @@ async def create_tag(request: Request, label: str = Form(...)):
     return RedirectResponse("/admin", status_code=302)
 
 
+@router.post("/face/{face_id}/delete")
+async def delete_face(request: Request, face_id: str):
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return {"error": "unauthorized"}
+    
+    from app.database import SessionLocal
+    from app.models import Face, photo_faces
+    
+    db = SessionLocal()
+    
+    face = db.query(Face).filter(Face.id == face_id).first()
+    
+    if face:
+        # Delete all photo_faces entries for this face first
+        db.execute(photo_faces.delete().where(photo_faces.c.face_id == face_id))
+        # Delete the face
+        db.delete(face)
+        db.commit()
+    
+    db.close()
+    
+    return RedirectResponse("/admin", status_code=302)
+
+
 @router.post("/photo/{photo_id}/tag")
 async def add_tag_to_photo(request: Request, photo_id: str, tag_id: str = Form(...)):
     session = get_session(request)
