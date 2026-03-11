@@ -23,9 +23,14 @@
     </form>
     
     {% if tags %}
-    <div style="margin-top: 1rem;">
+    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
         {% for tag in tags %}
-        <span class="tag" style="margin: 0.25rem;">{{ tag.label }}</span>
+        <span class="tag" style="margin: 0; display: inline-flex; align-items: center; gap: 0.25rem;">
+            {{ tag.label }}
+            <form method="POST" action="/admin/tag/{{ tag.id }}/delete" style="display: inline;" onsubmit="return confirm('Delete this tag from all photos?');">
+                <button type="submit" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.75rem; opacity: 0.6;">&times;</button>
+            </form>
+        </span>
         {% endfor %}
     </div>
     {% endif %}

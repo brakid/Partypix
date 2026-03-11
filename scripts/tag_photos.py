@@ -226,21 +226,26 @@ def consolidate_tags(consolidate_model: str = "qwen3:8b", skip_llm: bool = False
                 import ollama
                 
                 prompt = f"""Given these tags from a party photo collection: {json.dumps(tag_labels)}
-Identify tags that are semantically similar, singular/plural forms, or redundant.
-Return a JSON object where keys are tags to replace and values are the canonical tag to merge into.
+Identify ONLY very obvious duplicates that should be merged.
+Be conservative - prefer keeping specific tags over merging to generic ones.
 
 Rules:
-- Merge singular to plural (child->children, backpack->backpacks)
-- Merge specific to general (tree->forest, photograph->photo, celebration->party)
-- Merge synonyms (gift->presents, selfie->portrait)
-- Only merge if both tags exist in the list above
+- ONLY merge exact duplicates or very close synonyms
+- Merge singular/plural (child->children, backpack->backpacks)
+- Merge clear synonyms: gift->presents, selfie->portrait, photograph->photo, celebration->party
+- DO NOT merge specific objects to generic categories (castle->structure, tree->forest are TOO GENERIC)
+- When in doubt, DON'T merge - keeping specific tags is better
 
-Examples:
-- {{"selfie": "portrait", "photograph": "photo", "celebration": "party"}}
-- {{"child": "children", "tree": "forest", "backpack": "backpacks"}}
-- {{"gift": "presents", "trees": "forest", "hat": "hats"}}
+Examples of GOOD merges (keep these):
+- {{"selfie": "portrait", "gift": "presents", "photograph": "photo"}}
 
-Only return valid JSON, nothing else."""
+Examples of BAD merges (too generic, DO NOT do):
+- castle → structure (too generic, keep "castle")
+- tree → forest (too generic, keep "tree")  
+- car → vehicle (too generic, keep "car")
+- building → architecture (too generic, keep "building")
+
+Only return valid JSON with merges you are confident about. Empty {{}} is okay if no good merges found."""
                 
                 response = ollama.chat(
                     model=consolidate_model,

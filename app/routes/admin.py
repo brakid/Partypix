@@ -207,7 +207,31 @@ async def rotate_photo(request: Request, photo_id: str, direction: str = Form("c
     
     if not photo or not os.path.exists(photo.storage_path):
         db.close()
-        return RedirectResponse("/admin", status_code=302)
+    return RedirectResponse("/admin", status_code=302)
+
+
+@router.post("/tag/{tag_id}/delete")
+async def delete_tag(request: Request, tag_id: str):
+    session = get_session(request)
+    if session.get("role") != "admin":
+        return {"error": "unauthorized"}
+    
+    from app.database import SessionLocal
+    from app.models import Tag, photo_tags
+    
+    db = SessionLocal()
+    tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    
+    if tag:
+        # Delete all photo_tags entries for this tag first
+        db.execute(photo_tags.delete().where(photo_tags.c.tag_id == tag_id))
+        # Delete the tag
+        db.delete(tag)
+        db.commit()
+    
+    db.close()
+    
+    return RedirectResponse("/admin", status_code=302)
     
     # Rotate the full image
     img = Image.open(photo.storage_path)
