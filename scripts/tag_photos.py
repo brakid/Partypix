@@ -51,6 +51,14 @@ TAG_CONSOLIDATIONS = {
     "coffee table": "table",
     "desk": "table",
     
+    # Furniture
+    "chair": "furniture",
+    "chairs": "furniture",
+    "couch": "furniture",
+    "sofa": "furniture",
+    "stool": "furniture",
+    "stools": "furniture",
+    
     # Celebration synonyms
     "celebration": "party",
     "festivity": "party",
@@ -94,10 +102,32 @@ TAG_CONSOLIDATIONS = {
     # Night/Day
     "night": "nighttime",
     "day": "daytime",
+    
+    # Nature
+    "tree": "forest",
+    "trees": "forest",
+    "bush": "plants",
+    "bushes": "plants",
+    "flower": "flowers",
+    
+    # Items
+    "backpack": "backpacks",
+    "bag": "bags",
+    "bags": "bags",
+    "present": "presents",
+    "gift": "presents",
+    "gifts": "presents",
+    
+    # Clothing
+    "hat": "hats",
+    "cap": "hats",
+    "shirt": "clothing",
+    "dress": "clothing",
+    "sunglasses": "accessories",
 }
 
 
-def consolidate_tags(model: str = DEFAULT_MODEL, skip_llm: bool = False):
+def consolidate_tags(consolidate_model: str = "llama3.2:1b", skip_llm: bool = False):
     """Consolidate similar tags using rule-based mappings and optional LLM."""
     print("=" * 50)
     print("TAG CONSOLIDATION")
@@ -147,13 +177,24 @@ def consolidate_tags(model: str = DEFAULT_MODEL, skip_llm: bool = False):
                 import ollama
                 
                 prompt = f"""Given these tags from a party photo collection: {json.dumps(tag_labels)}
-Identify tags that are semantically similar or redundant.
+Identify tags that are semantically similar, singular/plural forms, or redundant.
 Return a JSON object where keys are tags to replace and values are the canonical tag to merge into.
-Examples: {{"selfie": "portrait", "photograph": "photo", "celebration": "party"}}
+
+Rules:
+- Merge singular to plural (child->children, backpack->backpacks)
+- Merge specific to general (tree->forest, photograph->photo, celebration->party)
+- Merge synonyms (gift->presents, selfie->portrait)
+- Only merge if both tags exist in the list above
+
+Examples:
+- {{"selfie": "portrait", "photograph": "photo", "celebration": "party"}}
+- {{"child": "children", "tree": "forest", "backpack": "backpacks"}}
+- {{"gift": "presents", "trees": "forest", "hat": "hats"}}
+
 Only return valid JSON, nothing else."""
                 
                 response = ollama.chat(
-                    model=model,
+                    model=consolidate_model,
                     messages=[{"role": "user", "content": prompt}]
                 )
                 
@@ -325,12 +366,13 @@ Only respond with the keywords, nothing else.''',
     
     # Run consolidation after tagging
     if merge:
-        consolidate_tags(model=model)
+        consolidate_tags(consolidate_model=consolidate_model)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Tagging Script for PartyPix")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama vision model (default: {DEFAULT_MODEL})")
+    parser.add_argument("--consolidate-model", default="llama3.2:1b", help="Ollama model for tag consolidation (text-only, default: llama3.2:1b)")
     parser.add_argument("--no-merge", action="store_true", help="Skip tag consolidation after tagging")
     parser.add_argument("--merge-only", action="store_true", help="Only run tag consolidation, skip tagging")
     args = parser.parse_args()
@@ -342,7 +384,10 @@ if __name__ == "__main__":
         print("ERROR: Database not found. Run init.py first.")
         sys.exit(1)
     
+    # Extract consolidate_model from args
+    consolidate_model = args.consolidate_model
+    
     if args.merge_only:
-        consolidate_tags(model=args.model, skip_llm=False)
+        consolidate_tags(consolidate_model=consolidate_model, skip_llm=False)
     else:
         tag_photos(model=args.model, merge=not args.no_merge)

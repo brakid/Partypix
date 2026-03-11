@@ -84,14 +84,15 @@ python scripts/tag_photos.py
 # Or with options:
 python scripts/tag_photos.py --no-merge          # Tag only, skip merging
 python scripts/tag_photos.py --merge-only        # Only merge, skip tagging
-python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom model
+python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom vision model
+python scripts/tag_photos.py --consolidate-model llama3.2:3b  # Custom consolidation model
 ```
 
 This analyzes all photos and adds semantic tags like "cake", "dancing", "group photo", etc.
 
 After tagging, the script automatically consolidates similar tags:
-- Rule-based: child→children, selfie→portrait, etc.
-- LLM-based: Uses Ollama to find additional semantic overlaps
+- Rule-based: child→children, selfie→portrait, chair→furniture, tree→forest, backpack→backpacks, etc.
+- LLM-based: Uses a lightweight text model (default: llama3.2:1b) to find additional semantic overlaps
 - All changes happen in a single database transaction for safety.
 
 ### 6. Face Detection (Optional)

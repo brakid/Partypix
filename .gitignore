@@ -36,6 +36,7 @@ env/
 
 # Project specific
 app.db
+app.db-journal
 config.json
 storage/
 *.log
