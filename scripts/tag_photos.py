@@ -58,6 +58,7 @@ TAG_CONSOLIDATIONS = {
     "sofa": "furniture",
     "stool": "furniture",
     "stools": "furniture",
+    "house": "houses",
     
     # Celebration synonyms
     "celebration": "party",
