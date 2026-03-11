@@ -149,7 +149,7 @@ function deleteFace(faceId) {
         <div style="padding: 0.5rem;">
             <p style="font-size: 0.75rem; color: var(--text-muted);">{{ photo.original_filename }}</p>
             
-            <div class="admin-actions" style="margin-top: 0.5rem; display: flex; gap: 0.25rem;">
+            <div class="admin-actions">
                 <form method="POST" action="/admin/photo/{{ photo.id }}/rotate">
                     <button type="submit" class="btn btn-sm" title="Rotate clockwise">Rotate ↻</button>
                 </form>
