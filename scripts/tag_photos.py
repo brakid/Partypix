@@ -174,11 +174,13 @@ def extract_json(text: str) -> dict:
     raise ValueError("Could not extract valid JSON from response")
 
 
-def consolidate_tags(consolidate_model: str = "qwen3:8b", skip_llm: bool = False):
+def consolidate_tags(consolidate_model: str = "qwen3:8b", skip_llm: bool = False, ollama_host: str = None):
     """Consolidate similar tags using rule-based mappings and optional LLM."""
     print("=" * 50)
     print("TAG CONSOLIDATION")
     print("=" * 50)
+    if ollama_host:
+        print(f"Using Ollama host: {ollama_host}")
     
     db = SessionLocal()
     
@@ -242,7 +244,8 @@ Only return valid JSON, nothing else."""
                 
                 response = ollama.chat(
                     model=consolidate_model,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=[{"role": "user", "content": prompt}],
+                    host=ollama_host
                 )
                 
                 content = response.message.content.strip()
@@ -333,12 +336,15 @@ Only return valid JSON, nothing else."""
         db.close()
 
 
-def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True):
+def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str = None):
     print("=" * 50)
     print("AI TAGGING")
     print("=" * 50)
     print(f"Using model: {model}")
-    print(f"Make sure Ollama is running: ollama serve")
+    if ollama_host:
+        print(f"Using Ollama host: {ollama_host}")
+    else:
+        print(f"Make sure Ollama is running: ollama serve")
     print()
     
     try:
@@ -374,7 +380,8 @@ def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True):
 Examples: cake, dancing, confetti, group photo, decorations, balloons, music, friends, gifts.
 Only respond with the keywords, nothing else.''',
                         'images': [photo.storage_path]
-                    }]
+                    }],
+                    host=ollama_host
                 )
                 
                 content = response.message.content
@@ -416,13 +423,14 @@ Only respond with the keywords, nothing else.''',
     
     # Run consolidation after tagging
     if merge:
-        consolidate_tags(consolidate_model=consolidate_model)
+        consolidate_tags(consolidate_model=consolidate_model, ollama_host=ollama_host)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Tagging Script for PartyPix")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama vision model (default: {DEFAULT_MODEL})")
     parser.add_argument("--consolidate-model", default="qwen3:8b", help="Ollama model for tag consolidation (text-only, default: qwen3:8b)")
+    parser.add_argument("--ollama-host", default=None, help="Ollama host URL (e.g., http://192.168.1.100:11434)")
     parser.add_argument("--no-merge", action="store_true", help="Skip tag consolidation after tagging")
     parser.add_argument("--merge-only", action="store_true", help="Only run tag consolidation, skip tagging")
     args = parser.parse_args()
@@ -434,10 +442,11 @@ if __name__ == "__main__":
         print("ERROR: Database not found. Run init.py first.")
         sys.exit(1)
     
-    # Extract consolidate_model from args
+    # Extract args
     consolidate_model = args.consolidate_model
+    ollama_host = args.ollama_host
     
     if args.merge_only:
-        consolidate_tags(consolidate_model=consolidate_model, skip_llm=False)
+        consolidate_tags(consolidate_model=consolidate_model, skip_llm=False, ollama_host=ollama_host)
     else:
-        tag_photos(model=args.model, merge=not args.no_merge)
+        tag_photos(model=args.model, merge=not args.no_merge, ollama_host=ollama_host)

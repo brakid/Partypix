@@ -88,6 +88,7 @@ python scripts/tag_photos.py --no-merge          # Tag only, skip merging
 python scripts/tag_photos.py --merge-only        # Only merge, skip tagging
 python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom vision model
 python scripts/tag_photos.py --consolidate-model llama3.2:3b  # Custom consolidation model
+python scripts/tag_photos.py --ollama-host http://192.168.1.100:11434  # External Ollama host
 ```
 
 This analyzes all photos and adds semantic tags like "cake", "dancing", "group photo", etc.
