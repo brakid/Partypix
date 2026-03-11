@@ -56,8 +56,8 @@ async def admin_page(request: Request, page: int = 1, sort: str = "newest"):
         .limit(PHOTOS_PER_PAGE)\
         .all()
     
-    tags = db.query(Tag).all()
-    faces = db.query(Face).all()
+    tags = db.query(Tag).order_by(Tag.label).all()
+    faces = db.query(Face).order_by(Face.name).all()
     
     photo_list = []
     for p in photos:
