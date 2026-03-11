@@ -22,6 +22,9 @@ Photo sharing platform for parties. Guests upload photos from their phones to a 
 - **Dark mode** - Auto-detects system preference, manual toggle available
 - **Mobile-first design** - Responsive layout optimized for phones
 - PWA support (add to home screen)
+- **Face detection** - Automatically detect and group people in photos
+- **Face filtering** - Filter gallery by person
+- **Face management** - Admin can rename detected people
 
 ## Setup
 
@@ -89,7 +92,48 @@ This analyzes all photos and adds semantic tags like "cake", "dancing", "group p
 After tagging, the script automatically consolidates similar tags:
 - Rule-based: child→children, selfie→portrait, etc.
 - LLM-based: Uses Ollama to find additional semantic overlaps
-All changes happen in a single database transaction for safety.
+- All changes happen in a single database transaction for safety.
+
+### 6. Face Detection (Optional)
+
+Requires [dlib](https://github.com/davisking/dlib) compiled with CMake:
+
+```bash
+# Install CMake (required for dlib on Apple Silicon)
+brew install cmake
+
+# Install face_recognition (includes face_recognition_models)
+pip install face-recognition
+pip install git+https://github.com/ageitgey/face_recognition_models
+
+# Run face detection
+python scripts/detect_faces.py
+
+# Options:
+python scripts/detect_faces.py --reprocess  # Re-process all photos
+python scripts/detect_faces.py --strict     # Stricter matching (0.4)
+python scripts/detect_faces.py --list       # List detected faces
+```
+
+On first run:
+- Detects all faces in photos using `face_recognition` library
+- Uses DBSCAN clustering to group similar faces
+- Assigns "Person 1", "Person 2", etc. in detection order
+- Generates face thumbnails from first photo containing each person
+
+On subsequent runs:
+- Detects new faces only
+- Matches to existing faces using distance threshold (0.5 by default)
+- Creates new Person entries for unmatched faces
+
+### Managing Faces
+
+In the admin page (`/admin`):
+- **View faces**: See all detected faces with thumbnails
+- **Filter by person**: In the gallery, filter photos by clicking on a person's thumbnail
+- **Rename**: Click on a person's name to rename them
+- **Merge**: Click one face to select it (blue highlight), then click another to merge them into one
+- **Delete**: Click the red [x] button to remove a face from all photos
 
 ## Reset for New Party
 
@@ -110,14 +154,15 @@ Partypix/
 ├── app.db               # SQLite database
 ├── app/
 │   ├── database.py      # DB connection
-│   ├── models.py        # Photo, Tag models
+│   ├── models.py        # Photo, Tag, Face models
 │   ├── auth.py          # Password auth
 │   └── routes/         # API endpoints
 ├── static/              # CSS, JS
 ├── templates/           # HTML pages
-├── storage/             # Photos + thumbnails
+├── storage/             # Photos + thumbnails + faces
 └── scripts/
-    └── tag_photos.py    # AI tagging
+    ├── tag_photos.py    # AI tagging
+    └── detect_faces.py  # Face detection
 ```
 
 ## Requirements
@@ -127,6 +172,7 @@ Partypix/
 - USB storage for photos (recommended)
 - ngrok (for post-party access)
 - Ollama + vision model (for AI tagging)
+- CMake + dlib (for face detection)
 
 ## Routes
 
@@ -135,6 +181,7 @@ Partypix/
 | `/` | Redirects to gallery |
 | `/login` | Password entry |
 | `/gallery` | Photo gallery (requires login) |
+| `/gallery?face=<id>` | Filter by person |
 | `/upload` | Upload photos |
 | `/qr` | QR code generator |
 | `/admin` | Admin panel |
@@ -142,6 +189,8 @@ Partypix/
 | `/download` | ZIP download (POST) |
 | `/api/photos/{id}/download` | Single photo download |
 | `/api/photos/{id}/full` | Full-size photo |
+| `/api/faces` | List all faces |
+| `/api/faces/{id}` | Rename face (PATCH) |
 | `/admin/photo/{id}/rotate` | Rotate photo (POST) |
 | `/admin/photo/{id}/delete` | Delete photo (POST) |
 

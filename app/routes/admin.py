@@ -35,7 +35,7 @@ async def admin_page(request: Request, page: int = 1, sort: str = "newest"):
     config = load_config()
     
     from app.database import SessionLocal
-    from app.models import Photo, Tag
+    from app.models import Photo, Tag, Face, PhotoFace
     
     db = SessionLocal()
     
@@ -57,15 +57,29 @@ async def admin_page(request: Request, page: int = 1, sort: str = "newest"):
         .all()
     
     tags = db.query(Tag).all()
+    faces = db.query(Face).all()
     
     photo_list = []
     for p in photos:
+        photo_faces = db.query(PhotoFace).filter(PhotoFace.photo_id == p.id).all()
+        
         photo_list.append({
             "id": p.id,
             "thumbnail_path": "/" + p.thumbnail_path if p.thumbnail_path else None,
             "original_filename": p.original_filename,
             "upload_timestamp": p.upload_timestamp.isoformat() if p.upload_timestamp else None,
-            "tags": [{"id": t.id, "label": t.label} for t in p.tags]
+            "tags": [{"id": t.id, "label": t.label} for t in p.tags],
+            "faces": [{"id": pf.face_id} for pf in photo_faces]
+        })
+    
+    face_list = []
+    for f in faces:
+        import os
+        thumbnail_path = f"/storage/faces/{f.id}.jpg" if os.path.exists(f"storage/faces/{f.id}.jpg") else None
+        face_list.append({
+            "id": f.id,
+            "name": f.name,
+            "thumbnail": thumbnail_path
         })
     
     db.close()
@@ -76,6 +90,7 @@ async def admin_page(request: Request, page: int = 1, sort: str = "newest"):
         "is_admin": True,
         "photos": photo_list,
         "tags": [{"id": t.id, "label": t.label} for t in tags],
+        "faces": face_list,
         "current_page": page,
         "total_pages": total_pages,
         "total_photos": total_photos,

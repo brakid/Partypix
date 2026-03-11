@@ -8,3 +8,12 @@ passlib[bcrypt]==1.7.4
 aiofiles==24.1.0
 jinja2==3.1.4
 qrcode[pil]==8.0
+dlib>=19.24.0
+numpy>=1.24.0
+scikit-learn>=1.0.0
+setuptools<70  # Required for face_recognition_models (pkg_resources)
+
+# Face recognition (install after dlib)
+# Run: brew install cmake first, then:
+# pip install face-recognition
+# pip install git+https://github.com/ageitgey/face_recognition_models

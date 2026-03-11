@@ -186,29 +186,54 @@ Only return valid JSON, nothing else."""
         print()
         print(f"Applying {len(merges)} consolidations...")
         
-        # Apply all changes in a transaction
-        with db.begin():
-            for old_label, new_label in merges.items():
-                old_tag = db.query(Tag).filter(Tag.label == old_label).first()
-                new_tag = db.query(Tag).filter(Tag.label == new_label).first()
+        # Apply all changes - session is already in a transaction from query above
+        for old_label, new_label in merges.items():
+            old_tag = db.query(Tag).filter(Tag.label == old_label).first()
+            new_tag = db.query(Tag).filter(Tag.label == new_label).first()
+            
+            if old_tag and new_tag:
+                # Get all photo_ids that have the old tag
+                old_entries = db.execute(
+                    photo_tags.select().where(photo_tags.c.tag_id == old_tag.id)
+                ).fetchall()
                 
-                if old_tag and new_tag:
-                    # Count photos being remapped
-                    count = db.query(photo_tags).filter(
-                        photo_tags.c.tag_id == old_tag.id
-                    ).count()
+                merged_count = 0
+                skipped_count = 0
+                
+                for entry in old_entries:
+                    photo_id = entry.photo_id
+                    # Check if this photo already has the new tag
+                    existing = db.execute(
+                        photo_tags.select().where(
+                            photo_tags.c.photo_id == photo_id,
+                            photo_tags.c.tag_id == new_tag.id
+                        )
+                    ).fetchone()
                     
-                    # Update all photo_tags to use new tag
-                    db.execute(
-                        photo_tags.update()
-                        .where(photo_tags.c.tag_id == old_tag.id)
-                        .values(tag_id=new_tag.id)
-                    )
-                    
-                    print(f"  Merged '{old_label}' → '{new_label}' ({count} photos)")
-                    
-                    # Delete old tag
-                    db.delete(old_tag)
+                    if existing:
+                        # Photo already has target tag - just remove old tag
+                        db.execute(
+                            photo_tags.delete().where(
+                                photo_tags.c.photo_id == photo_id,
+                                photo_tags.c.tag_id == old_tag.id
+                            )
+                        )
+                        skipped_count += 1
+                    else:
+                        # Update to new tag
+                        db.execute(
+                            photo_tags.update()
+                            .where(photo_tags.c.photo_id == photo_id)
+                            .where(photo_tags.c.tag_id == old_tag.id)
+                            .values(tag_id=new_tag.id)
+                        )
+                        merged_count += 1
+                
+                print(f"  Merged '{old_label}' → '{new_label}' ({merged_count} photos, {skipped_count} already had target)")
+                
+                db.delete(old_tag)
+        
+        db.commit()
         
         print()
         print("Consolidation complete!")

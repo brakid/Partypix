@@ -31,6 +31,105 @@
     {% endif %}
 </div>
 
+{% if faces %}
+<div class="card" style="margin-bottom: 2rem;">
+    <h3>Manage Faces</h3>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        Click a face to select it, then click another to merge. Click [x] to delete a face.
+    </p>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+        {% for face in faces %}
+        <div id="face-card-{{ face.id }}" class="face-card" 
+             onclick="handleFaceClick('{{ face.id }}', event)"
+             style="text-align: center; min-width: 100px; padding: 0.5rem; border-radius: 0.5rem; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;">
+            {% if face.thumbnail %}
+            <img src="{{ face.thumbnail }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border);">
+            {% else %}
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                <span style="font-size: 2rem; color: var(--text-muted);">?</span>
+            </div>
+            {% endif %}
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;">
+                <span onclick="event.stopPropagation(); renameFace('{{ face.id }}', '{{ face.name or 'Person' }}')"
+                      style="color: var(--primary); cursor: pointer; font-size: 0.875rem;">
+                    {{ face.name or 'Unknown' }}
+                </span>
+                <button onclick="event.stopPropagation(); deleteFace('{{ face.id }}')"
+                        title="Delete face"
+                        style="background: #ef4444; color: white; border: none; 
+                               border-radius: 50%; width: 20px; height: 20px; 
+                               cursor: pointer; font-size: 12px; line-height: 1;">x</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<style>
+.face-card.selected {
+    border-color: #3b82f6 !important;
+    background: #eff6ff;
+}
+</style>
+
+<script>
+let selectedFaceId = null;
+
+function handleFaceClick(faceId, event) {
+    const currentName = document.querySelector('#face-card-' + faceId + ' span').textContent.trim();
+    if (!selectedFaceId) {
+        // First selection
+        selectedFaceId = faceId;
+        document.getElementById('face-card-' + faceId).classList.add('selected');
+    } else if (selectedFaceId === faceId) {
+        // Deselect
+        document.getElementById('face-card-' + faceId).classList.remove('selected');
+        selectedFaceId = null;
+    } else {
+        // Merge!
+        const newName = prompt('Enter name for merged face:', currentName);
+        if (newName && newName.trim()) {
+            fetch('/api/faces/merge', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    source_ids: [selectedFaceId],
+                    target_id: faceId,
+                    name: newName.trim()
+                })
+            }).then(() => location.reload());
+        }
+    }
+}
+
+function renameFace(faceId, currentName) {
+    const newName = prompt('Enter new name for this person:', currentName.trim());
+    if (newName && newName.trim() && newName.trim() !== currentName.trim()) {
+        fetch('/api/faces/' + faceId, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName.trim()})
+        }).then(() => location.reload());
+    }
+}
+
+function deleteFace(faceId) {
+    if (!confirm('Delete this face from all photos? This cannot be undone.')) return;
+    
+    fetch('/api/faces/' + faceId, {method: 'DELETE'})
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to delete face'));
+            }
+        });
+}
+</script>
+
 <h2>Manage Photos</h2>
 
 <div class="sort-options" style="margin-bottom: 1rem;">

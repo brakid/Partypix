@@ -13,18 +13,32 @@
 
 <div class="filters-and-sort" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
     <div class="filters">
-        <a href="/gallery" {% if not selected_tag %}class="active"{% endif %}>All</a>
+        <a href="/gallery" {% if not selected_tag and not selected_face %}class="active"{% endif %}>All</a>
         {% for tag in tags %}
         <a href="/gallery{% if selected_tag == tag.label %}?sort={{ current_sort|default('newest') }}{% else %}?tag={{ tag.label }}&sort={{ current_sort|default('newest') }}{% endif %}" {% if selected_tag == tag.label %}class="active"{% endif %}>{{ tag.label }}</a>
         {% endfor %}
     </div>
     
+    {% if faces %}
+    <div class="filters">
+        <span style="margin-right: 0.5rem; color: var(--text-muted);">Person:</span>
+        {% for face in faces %}
+        <a href="/gallery{% if selected_face == face.id %}?sort={{ current_sort|default('newest') }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% else %}?face={{ face.id }}&sort={{ current_sort|default('newest') }}{% endif %}" {% if selected_face == face.id %}class="active"{% endif %}>
+            {% if face.thumbnail %}
+            <img src="{{ face.thumbnail }}" style="width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; object-fit: cover;">
+            {% endif %}
+            {{ face.name or 'Unknown' }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
     <div class="sort-options">
         <label for="sort-select" style="margin-right: 0.5rem;">Sort:</label>
         <select id="sort-select" onchange="window.location.href=this.value" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
-            <option value="/gallery?sort=newest{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" {% if current_sort == 'newest' %}selected{% endif %}>Newest first</option>
-            <option value="/gallery?sort=oldest{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
-            <option value="/gallery?sort=alpha{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" {% if current_sort == 'alpha' %}selected{% endif %}>Alphabetical</option>
+            <option value="/gallery?sort=newest{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if selected_face %}&face={{ selected_face }}{% endif %}" {% if current_sort == 'newest' %}selected{% endif %}>Newest first</option>
+            <option value="/gallery?sort=oldest{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if selected_face %}&face={{ selected_face }}{% endif %}" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+            <option value="/gallery?sort=alpha{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if selected_face %}&face={{ selected_face }}{% endif %}" {% if current_sort == 'alpha' %}selected{% endif %}>Alphabetical</option>
         </select>
     </div>
 </div>
@@ -69,19 +83,19 @@
 {% if total_pages > 1 %}
 <div class="pagination" style="display: flex; justify-content: center; gap: 0.5rem; padding: 1rem; flex-wrap: wrap;">
     {% if current_page > 1 %}
-    <a href="/gallery?page={{ current_page - 1 }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" class="btn btn-secondary">&laquo; Prev</a>
+    <a href="/gallery?page={{ current_page - 1 }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if selected_face %}&face={{ selected_face }}{% endif %}" class="btn btn-secondary">&laquo; Prev</a>
     {% endif %}
     
     {% for p in range(1, total_pages + 1) %}
         {% if p == 1 or p == total_pages or (p >= current_page - 2 and p <= current_page + 2) %}
-        <a href="/gallery?page={{ p }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" class="btn {% if p == current_page %}{% else %}btn-secondary{% endif %}">{{ p }}</a>
+        <a href="/gallery?page={{ p }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if selected_face %}&face={{ selected_face }}{% endif %}" class="btn {% if p == current_page %}{% else %}btn-secondary{% endif %}">{{ p }}</a>
         {% elif p == current_page - 3 or p == current_page + 3 %}
         <span style="padding: 0.5rem;">...</span>
         {% endif %}
     {% endfor %}
     
     {% if current_page < total_pages %}
-    <a href="/gallery?page={{ current_page + 1 }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}" class="btn btn-secondary">Next &raquo;</a>
+    <a href="/gallery?page={{ current_page + 1 }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if selected_face %}&face={{ selected_face }}{% endif %}" class="btn btn-secondary">Next &raquo;</a>
     {% endif %}
 </div>
 <p style="text-align: center; color: var(--text-muted); font-size: 0.875rem;">

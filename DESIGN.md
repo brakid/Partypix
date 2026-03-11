@@ -110,6 +110,40 @@ CREATE TABLE photo_tags (
 - Many-to-many relationship between photos and tags
 - CASCADE delete ensures referential integrity
 
+### Faces Table
+
+```sql
+CREATE TABLE faces (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    encoding BLOB,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+- `id`: UUID for unique identification
+- `name`: User-assigned name (e.g., "Person 1", "John", or null)
+- `encoding`: 128-dimensional face embedding (PickleType in SQLAlchemy)
+- `created_at`: For sorting
+
+### Photo Faces Junction Table
+
+```sql
+CREATE TABLE photo_faces (
+    photo_id TEXT REFERENCES photos(id) ON DELETE CASCADE,
+    face_id TEXT REFERENCES faces(id) ON DELETE CASCADE,
+    bbox_x INTEGER,
+    bbox_y INTEGER,
+    bbox_w INTEGER,
+    bbox_h INTEGER,
+    PRIMARY KEY (photo_id, face_id)
+);
+```
+
+- Many-to-many relationship between photos and faces
+- Bounding box coordinates for face thumbnail generation
+- CASCADE delete ensures referential integrity
+
 ## Design Decisions
 
 ### 1. Single-Party Instance
@@ -421,9 +455,103 @@ with db.begin():
 - LLM catches context-specific overlaps
 - Transaction ensures atomicity
 
-### 15. Mobile-First Responsive Design
+### 15. Face Detection
 
-**Decision:** Use mobile-first CSS with progressive enhancement for larger screens.
+**Decision:** Use face_recognition library for detection + DBSCAN for clustering, with strict thresholds for precision.
+
+**Detection Pipeline:**
+```python
+import face_recognition
+
+# Load image and detect faces
+img = face_recognition.load_image_file(photo_path)
+face_locations = face_recognition.face_locations(img, model="hog")
+face_encodings = face_recognition.face_encodings(img, face_locations)
+```
+
+**Clustering (first run):**
+```python
+from sklearn.cluster import DBSCAN
+
+# Cluster using DBSCAN with strict eps
+clustering = DBSCAN(eps=0.5, min_samples=1).fit(encodings)
+```
+
+**Matching (subsequent runs):**
+```python
+# Match new face to existing using distance threshold
+distance = np.linalg.norm(existing_encoding - new_encoding)
+if distance < 0.5:  # Strict threshold
+    match = existing_face
+```
+
+**Naming Convention:**
+- First unique face detected = "Person 1"
+- Second unique face = "Person 2"
+- ...and so on (order of detection)
+
+**Thumbnail Generation:**
+```python
+def get_face_thumbnail(image_path, bbox):
+    # Crop face with padding
+    face_img = img.crop((left-pad, top-pad, right+pad, bottom+pad))
+    face_img.thumbnail((100, 100), Image.LANCZOS)
+    return face_img
+```
+
+**Rationale:**
+- `face_recognition` is the easiest Python library for face detection
+- 128-dimensional encodings provide good discrimination
+- DBSCAN clusters similar faces without needing to specify number of clusters
+- Strict threshold (0.5 vs default 0.6) prioritizes precision over recall
+- Detection order naming is deterministic and simple
+
+**Prerequisites:**
+- CMake (for compiling dlib on Apple Silicon)
+- `brew install cmake`
+
+### Face Management
+
+**Decision:** Simple click-to-select UI for merging faces, with delete button for removal.
+
+**Merge Flow (Option C):**
+1. Click first face → highlights with blue border (selected)
+2. Click second face → prompt for new name
+3. Confirm → all photo_faces from source → target, delete source face
+
+**Delete Flow:**
+1. Click red [x] button on face card
+2. Confirm dialog
+3. Delete all photo_faces entries for that face
+4. Delete face record
+
+**API Endpoints:**
+```python
+# Delete face
+@router.delete("/api/faces/{face_id}")
+def delete_face(face_id):
+    # Delete photo_faces entries
+    db.execute(photo_faces.delete().where(face_id == face_id))
+    # Delete face
+    db.delete(face)
+
+# Merge faces
+@router.post("/api/faces/merge")
+def merge_faces(source_ids: list, target_id: str, name: str = None):
+    # For each source:
+    #   - If target already in photo, delete source entry
+    #   - Else update source → target
+    # Delete source faces
+    # Optionally rename target
+```
+
+**Rationale:**
+- Simple UX: single click to select, another to merge
+- Delete button visible without clicking
+- Confirmation before delete prevents accidents
+- Handles edge cases (target already in photo)
+
+## Mobile-First Responsive Design
 
 ```css
 /* Base: Mobile (2 columns) */
@@ -486,6 +614,7 @@ with db.begin():
 |---------|-------------|
 | Remote Access | Access via ngrok tunnel URL |
 | Tag Filtering | Filter photos by AI-generated tags |
+| **Face Filtering** | Filter photos by detected person |
 | **Pagination** | Browse large collections efficiently |
 | **Sort Options** | Sort by newest, oldest, or alphabetical |
 | Photo Selection | Checkbox to select multiple photos |
@@ -502,8 +631,10 @@ with db.begin():
 | **Photo Rotation** | Rotate photos 90° clockwise |
 | Manual Tagging | Add/remove tags manually |
 | Tag Management | Create new tags |
+| **Face Management** | View detected faces, rename people |
 | **Analytics Dashboard** | Photo count, tags, storage usage |
 | AI Tagging Script | Run Ollama to auto-tag |
+| Face Detection Script | Detect and cluster faces |
 
 ## File Structure
 
@@ -517,7 +648,7 @@ Partypix/
 ├── app/
 │   ├── __init__.py
 │   ├── database.py      # SQLAlchemy setup
-│   ├── models.py        # Photo, Tag, PhotoTag models
+│   ├── models.py        # Photo, Tag, Face models
 │   ├── auth.py          # Password verification
 │   └── routes/
 │       ├── __init__.py
@@ -539,9 +670,11 @@ Partypix/
 │   └── analytics.html   # Analytics dashboard
 ├── storage/
 │   ├── photos/          # Full-size images
-│   └── thumbnails/      # 300px thumbnails
+│   ├── thumbnails/      # 300px thumbnails
+│   └── faces/          # Face thumbnails
 └── scripts/
-    └── tag_photos.py    # Ollama AI tagging
+    ├── tag_photos.py    # Ollama AI tagging
+    └── detect_faces.py  # Face detection
 ```
 
 ## Security Considerations
@@ -632,6 +765,20 @@ python-jose[cryptography]==3.3.0  # JWT (unused but related)
 passlib[bcrypt]==1.7.4  # Password hashing
 aiofiles==24.1.0        # Async file I/O
 jinja2==3.1.4           # Templates
+face-recognition>=1.3.0 # Face detection
+dlib>=19.24.0          # Required by face-recognition
+numpy>=1.24.0          # Array operations
+scikit-learn>=1.0.0    # DBSCAN clustering
+```
+
+## Prerequisites for Face Detection
+
+```bash
+# Install CMake (required for compiling dlib on Apple Silicon)
+brew install cmake
+
+# Install Python dependencies
+pip install face-recognition dlib numpy scikit-learn
 ```
 
 ## License

@@ -205,6 +205,48 @@ photos_with_tags = db.query(func.count(func.distinct(photo_tags.c.photo_id))).sc
 - All changes in single SQLite transaction for safety
 - Logs each merge operation
 
+### 13. Face Detection Feature
+**Asked:** Add ability to detect faces in photos, group similar faces together, and filter gallery by person.
+
+**Requirements Clarified:**
+- Users should see face thumbnails and click to filter (not name-based)
+- Admin can rename faces in UI (default: Person 1, Person 2, etc.)
+- Strict clustering on first run (precision > recall)
+- Incremental detection (detect new faces only, merge with existing)
+- Platform: Apple Silicon M3
+
+**Implemented:**
+- Added `Face` and `PhotoFace` models to app/models.py
+- Created `scripts/detect_faces.py` with:
+  - Uses `face_recognition` library (128-dim encodings)
+  - DBSCAN clustering (eps=0.5) for first run
+  - "Person 1", "Person 2", etc. named in detection order
+  - Strict threshold (0.5) for matching on subsequent runs
+  - Generates face thumbnails from first photo containing each face
+- Added API endpoints:
+  - `GET /api/faces` - List all faces with thumbnails
+  - `PATCH /api/faces/{id}` - Rename face
+  - `GET /api/photos?face=<id>` - Filter photos by face
+- Updated gallery UI with face filter dropdown
+- Updated admin page with face management (click to rename)
+- Added face-recognition, dlib, numpy, scikit-learn to requirements.txt
+
+**Prerequisites:**
+- `brew install cmake` (for compiling dlib on Apple Silicon)
+
+### 14. Face Merge & Delete Feature
+**Asked:** How to merge two faces if they are the same in the admin UI? Also add ability to delete faces.
+
+**Implemented:**
+- Added face selection UI: click to select (blue highlight), click another to merge
+- Added merge prompt: enter new name for merged face
+- Added delete button [x] on each face card
+- Added API endpoints:
+  - `DELETE /api/faces/{id}` - Delete face from all photos
+  - `POST /api/faces/merge` - Merge multiple faces into one
+- Handles edge case: if target face already in photo, removes duplicate
+- Admin-only operations
+
 ---
 
 ## Files Created
@@ -213,7 +255,7 @@ photos_with_tags = db.query(func.count(func.distinct(photo_tags.c.photo_id))).sc
 2. `init.py` - Database initialization script
 3. `main.py` - FastAPI entry point
 4. `app/database.py` - SQLAlchemy setup
-5. `app/models.py` - Photo, Tag, PhotoTag models
+5. `app/models.py` - Photo, Tag, PhotoTag, Face, PhotoFace models
 6. `app/auth.py` - Password verification
 7. `app/routes/upload.py` - Upload + login endpoints
 8. `app/routes/gallery.py` - Gallery browsing
@@ -230,6 +272,7 @@ photos_with_tags = db.query(func.count(func.distinct(photo_tags.c.photo_id))).sc
 19. `templates/qr.html` - QR code generator
 20. `templates/analytics.html` - Analytics dashboard
 21. `scripts/tag_photos.py` - Ollama tagging
-20. `README.md` - Usage documentation
-21. `DESIGN.md` - Architecture & design decisions
-22. `.gitignore` - Git ignore patterns
+22. `scripts/detect_faces.py` - Face detection
+23. `README.md` - Usage documentation
+24. `DESIGN.md` - Architecture & design decisions
+25. `.gitignore` - Git ignore patterns

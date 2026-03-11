@@ -47,6 +47,27 @@ def init_database(db_path: str, title: str, guest_password: str, admin_password:
             )
         """))
         
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS faces (
+                id TEXT PRIMARY KEY,
+                name TEXT,
+                encoding BLOB,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS photo_faces (
+                photo_id TEXT REFERENCES photos(id) ON DELETE CASCADE,
+                face_id TEXT REFERENCES faces(id) ON DELETE CASCADE,
+                bbox_x INTEGER,
+                bbox_y INTEGER,
+                bbox_w INTEGER,
+                bbox_h INTEGER,
+                PRIMARY KEY (photo_id, face_id)
+            )
+        """))
+        
         conn.commit()
     
     config = {
@@ -61,6 +82,7 @@ def init_database(db_path: str, title: str, guest_password: str, admin_password:
     
     os.makedirs("storage/photos", exist_ok=True)
     os.makedirs("storage/thumbnails", exist_ok=True)
+    os.makedirs("storage/faces", exist_ok=True)
     
     print(f"✓ Database initialized: {db_path}")
     print(f"✓ Config saved: config.json")
