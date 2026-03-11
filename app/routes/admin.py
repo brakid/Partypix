@@ -68,7 +68,7 @@ async def admin_page(request: Request, page: int = 1, sort: str = "newest"):
             "thumbnail_path": "/" + p.thumbnail_path if p.thumbnail_path else None,
             "original_filename": p.original_filename,
             "upload_timestamp": p.upload_timestamp.isoformat() if p.upload_timestamp else None,
-            "tags": [{"id": t.id, "label": t.label} for t in p.tags],
+            "tags": [{"id": t.id, "label": t.label} for t in sorted(p.tags, key=lambda t: t.label)],
             "faces": [{"id": pf.face_id} for pf in photo_faces]
         })
     

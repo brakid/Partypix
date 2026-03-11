@@ -87,7 +87,7 @@ async def gallery(request: Request, tag: str = None, face: str = None, page: int
             "thumbnail_path": "/" + p.thumbnail_path if p.thumbnail_path else None,
             "original_filename": p.original_filename,
             "upload_timestamp": p.upload_timestamp.isoformat() if p.upload_timestamp else None,
-            "tags": [t.label for t in p.tags],
+            "tags": [t.label for t in sorted(p.tags, key=lambda t: t.label)],
             "face_ids": face_ids
         })
     
@@ -152,7 +152,7 @@ async def api_photos(request: Request, tag: str = None, face: str = None, page: 
             "thumbnail": "/" + p.thumbnail_path if p.thumbnail_path else None,
             "full": f"/api/photos/{p.id}/full",
             "download": f"/api/photos/{p.id}/download",
-            "tags": [t.label for t in p.tags],
+            "tags": [t.label for t in sorted(p.tags, key=lambda t: t.label)],
             "faces": [pf.face_id for pf in photo_faces]
         })
     
