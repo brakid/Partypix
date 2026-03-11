@@ -127,17 +127,29 @@ def get_or_create_face(db, encoding: np.ndarray, threshold: float = 0.5) -> Face
     return new_face
 
 
-def detect_faces(reprocess: bool = False, threshold: float = 0.5):
+def detect_faces(reprocess: bool = False, reset: bool = False, threshold: float = 0.5):
     """Main detection function."""
     print("=" * 50)
     print("FACE DETECTION")
     print("=" * 50)
+    if reset:
+        print("RESET MODE: Deleting all existing faces first")
     
     init_db()
     
     db = SessionLocal()
     
     try:
+        # Delete all existing faces if reset is True
+        if reset:
+            print("Deleting all existing faces...")
+            db.execute(photo_faces.delete())
+            db.commit()
+            
+            # Delete all Face records
+            db.query(Face).delete()
+            db.commit()
+        
         query = db.query(Photo)
         
         if not reprocess:
@@ -360,7 +372,8 @@ def list_faces():
 
 def main():
     parser = argparse.ArgumentParser(description="Face detection for PartyPix")
-    parser.add_argument("--reprocess", action="store_true", help="Re-process all photos")
+    parser.add_argument("--reprocess", action="store_true", help="Re-process all photos (skip already processed)")
+    parser.add_argument("--reset", action="store_true", help="Delete all existing faces and re-detect from scratch")
     parser.add_argument("--strict", action="store_true", help="Use stricter threshold (0.4)")
     parser.add_argument("--threshold", type=float, default=0.5, help="Face match threshold")
     parser.add_argument("--list", action="store_true", help="List detected faces")
@@ -370,9 +383,9 @@ def main():
     if args.list:
         list_faces()
     elif args.strict:
-        detect_faces(reprocess=args.reprocess, threshold=0.4)
+        detect_faces(reprocess=args.reprocess, reset=args.reset, threshold=0.4)
     else:
-        detect_faces(reprocess=args.reprocess, threshold=args.threshold)
+        detect_faces(reprocess=args.reprocess, reset=args.reset, threshold=args.threshold)
 
 
 if __name__ == "__main__":

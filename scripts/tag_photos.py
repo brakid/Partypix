@@ -127,6 +127,14 @@ TAG_CONSOLIDATIONS = {
 }
 
 
+def get_ollama_client(host: str = None):
+    """Get ollama client with optional custom host."""
+    import ollama
+    if host:
+        return ollama.Client(host=host)
+    return ollama
+
+
 def extract_json(text: str) -> dict:
     """Extract JSON from LLM response with multiple fallback methods."""
     import re
@@ -247,10 +255,10 @@ Examples of BAD merges (too generic, DO NOT do):
 
 Only return valid JSON with merges you are confident about. Empty {{}} is okay if no good merges found."""
                 
-                response = ollama.chat(
+                client = get_ollama_client(ollama_host)
+                response = client.chat(
                     model=consolidate_model,
-                    messages=[{"role": "user", "content": prompt}],
-                    host=ollama_host
+                    messages=[{"role": "user", "content": prompt}]
                 )
                 
                 content = response.message.content.strip()
@@ -341,7 +349,7 @@ Only return valid JSON with merges you are confident about. Empty {{}} is okay i
         db.close()
 
 
-def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str = None):
+def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str = None, retag: bool = False):
     print("=" * 50)
     print("AI TAGGING")
     print("=" * 50)
@@ -350,6 +358,8 @@ def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str 
         print(f"Using Ollama host: {ollama_host}")
     else:
         print(f"Make sure Ollama is running: ollama serve")
+    if retag:
+        print("Re-tagging ALL photos (deleting existing tags first)")
     print()
     
     try:
@@ -362,6 +372,13 @@ def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str 
     db = SessionLocal()
     
     try:
+        # Delete all existing tags if retag is True
+        if retag:
+            print("Deleting all existing tags...")
+            db.execute(photo_tags.delete())
+            db.query(Tag).delete()
+            db.commit()
+        
         photos = db.query(Photo).all()
         print(f"Found {len(photos)} photos to process")
         
@@ -370,14 +387,15 @@ def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str 
                 photo_tags.c.photo_id == photo.id
             ).all()
             
-            if existing_tags:
+            if existing_tags and not retag:
                 print(f"[{i}/{len(photos)}] Skipping {photo.original_filename} (already has tags)")
                 continue
             
             print(f"[{i}/{len(photos)}] Processing {photo.original_filename}...")
             
             try:
-                response = ollama.chat(
+                client = get_ollama_client(ollama_host)
+                response = client.chat(
                     model=model,
                     messages=[{
                         'role': 'user',
@@ -385,8 +403,7 @@ def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str 
 Examples: cake, dancing, confetti, group photo, decorations, balloons, music, friends, gifts.
 Only respond with the keywords, nothing else.''',
                         'images': [photo.storage_path]
-                    }],
-                    host=ollama_host
+                    }]
                 )
                 
                 content = response.message.content
@@ -438,6 +455,7 @@ if __name__ == "__main__":
     parser.add_argument("--ollama-host", default=None, help="Ollama host URL (e.g., http://192.168.1.100:11434)")
     parser.add_argument("--no-merge", action="store_true", help="Skip tag consolidation after tagging")
     parser.add_argument("--merge-only", action="store_true", help="Only run tag consolidation, skip tagging")
+    parser.add_argument("--retag", action="store_true", help="Delete all existing tags and re-tag all photos from scratch")
     args = parser.parse_args()
     
     project_root = Path(__file__).parent.parent
@@ -454,4 +472,4 @@ if __name__ == "__main__":
     if args.merge_only:
         consolidate_tags(consolidate_model=consolidate_model, skip_llm=False, ollama_host=ollama_host)
     else:
-        tag_photos(model=args.model, merge=not args.no_merge, ollama_host=ollama_host)
+        tag_photos(model=args.model, merge=not args.no_merge, ollama_host=ollama_host, retag=args.retag)

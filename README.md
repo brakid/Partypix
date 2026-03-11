@@ -86,6 +86,7 @@ python scripts/tag_photos.py
 # Or with options:
 python scripts/tag_photos.py --no-merge          # Tag only, skip merging
 python scripts/tag_photos.py --merge-only        # Only merge, skip tagging
+python scripts/tag_photos.py --retag             # Delete all tags and re-tag from scratch
 python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom vision model
 python scripts/tag_photos.py --consolidate-model llama3.2:3b  # Custom consolidation model
 python scripts/tag_photos.py --ollama-host http://192.168.1.100:11434  # External Ollama host
@@ -115,7 +116,8 @@ pip install git+https://github.com/ageitgey/face_recognition_models
 python scripts/detect_faces.py
 
 # Options:
-python scripts/detect_faces.py --reprocess  # Re-process all photos
+python scripts/detect_faces.py --reprocess  # Re-process all photos (skip already processed)
+python scripts/detect_faces.py --reset     # Delete all faces and re-detect from scratch
 python scripts/detect_faces.py --strict     # Stricter matching (0.4)
 python scripts/detect_faces.py --list       # List detected faces
 ```
