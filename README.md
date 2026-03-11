@@ -2,6 +2,8 @@
 
 Photo sharing platform for parties. Guests upload photos from their phones to a shared pool, with post-party access via tunneled URL and AI-powered tagging.
 
+![](./app.png)
+
 ## Features
 
 - **QR code generator** - Generate scannable QR codes for guest access
