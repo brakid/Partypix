@@ -127,7 +127,54 @@ TAG_CONSOLIDATIONS = {
 }
 
 
-def consolidate_tags(consolidate_model: str = "llama3.2:1b", skip_llm: bool = False):
+def extract_json(text: str) -> dict:
+    """Extract JSON from LLM response with multiple fallback methods."""
+    import re
+    
+    if not text:
+        raise ValueError("Empty response")
+    
+    # Method 1: Try direct parse
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    
+    # Method 2: Try to find JSON in markdown code block
+    if "```json" in text:
+        try:
+            start = text.find("```json") + 7
+            end = text.rfind("```")
+            return json.loads(text[start:end].strip())
+        except (json.JSONDecodeError, ValueError):
+            pass
+    elif "```" in text:
+        try:
+            start = text.find("```") + 3
+            end = text.rfind("```")
+            return json.loads(text[start:end].strip())
+        except (json.JSONDecodeError, ValueError):
+            pass
+    
+    # Method 3: Find first { and last } in the text
+    if "{" in text and "}" in text:
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        json_str = text[start:end]
+        
+        # Try to fix common JSON issues
+        # Remove trailing commas
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+        
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            pass
+    
+    raise ValueError("Could not extract valid JSON from response")
+
+
+def consolidate_tags(consolidate_model: str = "qwen3:8b", skip_llm: bool = False):
     """Consolidate similar tags using rule-based mappings and optional LLM."""
     print("=" * 50)
     print("TAG CONSOLIDATION")
@@ -199,12 +246,9 @@ Only return valid JSON, nothing else."""
                 )
                 
                 content = response.message.content.strip()
-                # Extract JSON from response
-                if "{" in content:
-                    json_start = content.find("{")
-                    json_end = content.rfind("}") + 1
-                    json_str = content[json_start:json_end]
-                    llm_merges = json.loads(json_str)
+                
+                try:
+                    llm_merges = extract_json(content)
                     
                     for old, new in llm_merges.items():
                         if old in tag_labels and new in tag_labels:
@@ -213,6 +257,12 @@ Only return valid JSON, nothing else."""
                                 if db.query(Tag).filter(Tag.label == new).first():
                                     merges[old] = new
                                     print(f"  LLM: '{old}' → '{new}'")
+                                    
+                except ValueError as e:
+                    print(f"  LLM response parsing failed: {e}")
+                    print(f"  Raw response (first 200 chars): {content[:200]}...")
+                except Exception as e:
+                    print(f"  LLM consolidation error: {e}")
                 
             except Exception as e:
                 print(f"  LLM consolidation skipped: {e}")
@@ -372,7 +422,7 @@ Only respond with the keywords, nothing else.''',
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Tagging Script for PartyPix")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama vision model (default: {DEFAULT_MODEL})")
-    parser.add_argument("--consolidate-model", default="llama3.2:1b", help="Ollama model for tag consolidation (text-only, default: llama3.2:1b)")
+    parser.add_argument("--consolidate-model", default="qwen3:8b", help="Ollama model for tag consolidation (text-only, default: qwen3:8b)")
     parser.add_argument("--no-merge", action="store_true", help="Skip tag consolidation after tagging")
     parser.add_argument("--merge-only", action="store_true", help="Only run tag consolidation, skip tagging")
     args = parser.parse_args()

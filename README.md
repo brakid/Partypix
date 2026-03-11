@@ -92,7 +92,8 @@ This analyzes all photos and adds semantic tags like "cake", "dancing", "group p
 
 After tagging, the script automatically consolidates similar tags:
 - Rule-based: child→children, selfie→portrait, chair→furniture, tree→forest, backpack→backpacks, etc.
-- LLM-based: Uses a lightweight text model (default: llama3.2:1b) to find additional semantic overlaps
+- LLM-based: Uses a powerful text model (default: qwen3:8b) to find additional semantic overlaps
+- Robust JSON parsing with fallback for malformed responses
 - All changes happen in a single database transaction for safety.
 
 ### 6. Face Detection (Optional)
