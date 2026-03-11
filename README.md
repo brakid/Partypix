@@ -75,14 +75,21 @@ ollama pull qwen2.5vl:7b
 # Start Ollama
 ollama serve
 
-# In another terminal, run the tagging script:
+# Run tagging (includes automatic tag consolidation)
 python scripts/tag_photos.py
 
-# Or specify a different model:
-python scripts/tag_photos.py --model llama3.2-vision:11b
+# Or with options:
+python scripts/tag_photos.py --no-merge          # Tag only, skip merging
+python scripts/tag_photos.py --merge-only        # Only merge, skip tagging
+python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom model
 ```
 
 This analyzes all photos and adds semantic tags like "cake", "dancing", "group photo", etc.
+
+After tagging, the script automatically consolidates similar tags:
+- Rule-based: child→children, selfie→portrait, etc.
+- LLM-based: Uses Ollama to find additional semantic overlaps
+All changes happen in a single database transaction for safety.
 
 ## Reset for New Party
 

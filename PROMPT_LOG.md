@@ -195,6 +195,16 @@ photos_with_tags = db.query(func.count(func.distinct(photo_tags.c.photo_id))).sc
 
 **Fix:** Added `is_admin: True` to template context in admin.py and analytics.py routes
 
+### 12. Tag Consolidation Feature
+**Asked:** Tags are growing too much with semantic overlaps (singular/plural, synonyms). Need to consolidate.
+
+**Implemented:**
+- Added rule-based TAG_CONSOLIDATIONS dictionary (40+ mappings)
+- Added LLM consolidation using Ollama to find additional overlaps
+- Added CLI flags: `--merge` (default), `--no-merge`, `--merge-only`
+- All changes in single SQLite transaction for safety
+- Logs each merge operation
+
 ---
 
 ## Files Created

@@ -373,7 +373,55 @@ thumb.save(thumbnail_path, "JPEG", quality=80)
 - Thumbnail stays consistent with full image
 - Simple single-direction rotation (cw) is sufficient for most cases)
 
-### 14. Mobile-First Responsive Design
+### 14. Tag Consolidation
+
+**Decision:** Automatically merge similar/semantic-overlap tags after AI tagging to prevent tag explosion.
+
+**Two-stage approach:**
+
+1. **Rule-based consolidation** - Built-in dictionary:
+```python
+TAG_CONSOLIDATIONS = {
+    # Singular → Plural
+    "child": "children", "kid": "children",
+    "man": "people", "woman": "people",
+    # Specific → General
+    "dining table": "table", "coffee table": "table",
+    # Synonyms
+    "celebration": "party", "photograph": "photo",
+    "selfie": "portrait",
+    # ... 40+ mappings
+}
+```
+
+2. **LLM consolidation** - Use Ollama to find additional overlaps:
+```
+Prompt: "Given these tags: [list], identify semantic overlaps.
+Return JSON: {'selfie': 'portrait', 'photograph': 'photo'}"
+```
+
+**Transaction safety:**
+```python
+with db.begin():
+    for old_label, new_label in merges.items():
+        # Update photo_tags
+        db.execute(update(photo_tags)...values(tag_id=new_id))
+        # Delete old tag
+        db.delete(old_tag)
+```
+
+**CLI Options:**
+- `--merge` (default): Tag + consolidate
+- `--no-merge`: Tag only, skip consolidation  
+- `--merge-only`: Only consolidate, skip tagging
+
+**Rationale:**
+- Prevents tag explosion from similar AI outputs
+- Rule-based catches common cases (singular/plural)
+- LLM catches context-specific overlaps
+- Transaction ensures atomicity
+
+### 15. Mobile-First Responsive Design
 
 **Decision:** Use mobile-first CSS with progressive enhancement for larger screens.
 
