@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.database import SessionLocal
 from app.models import Photo, Tag, photo_tags
 
-DEFAULT_MODEL = "qwen2.5vl:7b"
+DEFAULT_MODEL = "qwen3.5:8b"
 
 # Rule-based tag consolidations: tag_to_merge -> canonical_tag
 TAG_CONSOLIDATIONS = {
@@ -44,6 +44,7 @@ TAG_CONSOLIDATIONS = {
     "friends": "people",
     "guest": "people",
     "guests": "people",
+    "house": "houses",
     
     # Specific → General
     "dining table": "table",
@@ -58,7 +59,6 @@ TAG_CONSOLIDATIONS = {
     "sofa": "furniture",
     "stool": "furniture",
     "stools": "furniture",
-    "house": "houses",
     
     # Celebration synonyms
     "celebration": "party",
@@ -183,7 +183,7 @@ def extract_json(text: str) -> dict:
     raise ValueError("Could not extract valid JSON from response")
 
 
-def consolidate_tags(consolidate_model: str = "qwen3:8b", skip_llm: bool = False, ollama_host: str = None):
+def consolidate_tags(consolidate_model: str = DEFAULT_MODEL, skip_llm: bool = False, ollama_host: str = None):
     """Consolidate similar tags using rule-based mappings and optional LLM."""
     print("=" * 50)
     print("TAG CONSOLIDATION")
@@ -452,7 +452,7 @@ Only respond with the keywords, nothing else.''',
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Tagging Script for PartyPix")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama vision model (default: {DEFAULT_MODEL})")
-    parser.add_argument("--consolidate-model", default="qwen3:8b", help="Ollama model for tag consolidation (text-only, default: qwen3:8b)")
+    parser.add_argument("--consolidate-model", default=DEFAULT_MODEL, help=f"Ollama model for tag consolidation (text-only, default: {DEFAULT_MODEL})")
     parser.add_argument("--ollama-host", default=None, help="Ollama host URL (e.g., http://192.168.1.100:11434)")
     parser.add_argument("--no-merge", action="store_true", help="Skip tag consolidation after tagging")
     parser.add_argument("--merge-only", action="store_true", help="Only run tag consolidation, skip tagging")
