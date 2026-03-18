@@ -19,7 +19,7 @@ Photo sharing platform for parties. Guests upload photos from their phones to a 
 - **Photo rotation** - Rotate photos 90° clockwise
 - Admin panel for moderation (delete photos, add tags)
 - **Analytics dashboard** - Photo count, tags, storage usage
-- AI-powered semantic tagging using Ollama (post-party)
+- AI-powered semantic tagging using llama.cpp (post-party)
 - Photo selection and ZIP download
 - **Dark mode** - Auto-detects system preference, manual toggle available
 - **Mobile-first design** - Responsive layout optimized for phones
@@ -71,14 +71,14 @@ Share the ngrok URL with guests for post-party browsing/download.
 
 ### 5. AI Tagging (Optional)
 
-Requires [Ollama](https://ollama.ai/) installed with a vision model:
+Requires a single llama.cpp server with a vision model:
 
 ```bash
-# Pull the vision model (qwen2.5vl:7b is default)
-ollama pull qwen2.5vl:7b
-
-# Start Ollama
-ollama serve
+# Start llama-server with vision model on port 8001
+llama-server \
+    -hf unsloth/Qwen3.5-9B-GGUF:UD-Q4_K_XL \
+    --port 8001 \
+    --reasoning on
 
 # Run tagging (includes automatic tag consolidation)
 python scripts/tag_photos.py
@@ -87,16 +87,15 @@ python scripts/tag_photos.py
 python scripts/tag_photos.py --no-merge          # Tag only, skip merging
 python scripts/tag_photos.py --merge-only        # Only merge, skip tagging
 python scripts/tag_photos.py --retag             # Delete all tags and re-tag from scratch
-python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom vision model
-python scripts/tag_photos.py --consolidate-model llama3.2:3b  # Custom consolidation model
-python scripts/tag_photos.py --ollama-host http://192.168.1.100:11434  # External Ollama host
+python scripts/tag_photos.py --model unsloth/Qwen3.5-9B-GGUF:UD-Q4_K_XL  # Model name
+python scripts/tag_photos.py --api-host http://localhost:8001  # API server URL
 ```
 
 This analyzes all photos and adds semantic tags like "cake", "dancing", "group photo", etc.
 
 After tagging, the script automatically consolidates similar tags:
-- Rule-based: child→children, selfie→portrait, chair→furniture, tree→forest, backpack→backpacks, etc.
-- LLM-based: Uses a powerful text model (default: qwen3.5:9b) to find additional semantic overlaps
+- Rule-based: child→children, selfie→portrait, chair→furniture, home→house→houses, etc.
+- LLM-based: Uses llama-server with thinking enabled for semantic analysis
 - Robust JSON parsing with fallback for malformed responses
 - All changes happen in a single database transaction for safety.
 
@@ -178,7 +177,7 @@ Partypix/
 - Raspberry Pi (or any local server)
 - USB storage for photos (recommended)
 - ngrok (for post-party access)
-- Ollama + vision model (for AI tagging)
+- llama.cpp server with vision model (for AI tagging)
 - CMake + dlib (for face detection)
 
 ## Routes

@@ -2,19 +2,18 @@
 """
 AI Tagging Script for PartyPix
 
-Run this script after the party to automatically tag photos using Ollama.
-Requires Ollama with a vision model installed.
+Run this script after the party to automatically tag photos using AI.
+Requires a llama.cpp server running with a vision model.
 
 Usage:
     python scripts/tag_photos.py                    # Tag + merge (default)
     python scripts/tag_photos.py --no-merge          # Tag only, skip merging
     python scripts/tag_photos.py --merge-only        # Only merge, skip tagging
-    python scripts/tag_photos.py --model llama3.2-vision:11b  # Custom model
+    python scripts/tag_photos.py --retag             # Delete existing tags and re-tag
 
-Supported models (Ollama):
-    - qwen2.5vl:7b       (default, best for M3 Mac)
-    - llama3.2-vision:11b
-    - moondream:latest    (lightweight)
+Requirements:
+    - llama-server with vision model (e.g., Qwen3.5-9B) on port 8001
+    - openai Python package (pip install openai)
 """
 
 import os
@@ -29,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.database import SessionLocal
 from app.models import Photo, Tag, photo_tags
 
-DEFAULT_MODEL = "qwen3.5:8b"
+DEFAULT_MODEL = "unsloth/Qwen3.5-9B-GGUF:UD-Q4_K_XL"
 
 # Rule-based tag consolidations: tag_to_merge -> canonical_tag
 TAG_CONSOLIDATIONS = {
@@ -44,7 +43,6 @@ TAG_CONSOLIDATIONS = {
     "friends": "people",
     "guest": "people",
     "guests": "people",
-    "house": "houses",
     
     # Specific → General
     "dining table": "table",
@@ -125,15 +123,55 @@ TAG_CONSOLIDATIONS = {
     "shirt": "clothing",
     "dress": "clothing",
     "sunglasses": "accessories",
+    
+    # Places
+    "house": "home",
+    "houses": "home",
 }
 
 
-def get_ollama_client(host: str = None):
-    """Get ollama client with optional custom host."""
-    import ollama
-    if host:
-        return ollama.Client(host=host)
-    return ollama
+def get_llm_response(host: str, model: str, messages: list) -> str:
+    """Call LLM via OpenAI-compatible API."""
+    from openai import OpenAI
+    
+    if not host:
+        host = "http://localhost:8001/v1"
+    
+    client = OpenAI(base_url=host, api_key="not-needed")
+    
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+    )
+    
+    return response.choices[0].message.content
+
+
+def get_vision_response(host: str, model: str, image_path: str, prompt: str) -> str:
+    """Call vision model via OpenAI-compatible API with image."""
+    from openai import OpenAI
+    import base64
+    
+    if not host:
+        host = "http://localhost:8001/v1"
+    
+    client = OpenAI(base_url=host, api_key="not-needed")
+    
+    with open(image_path, "rb") as f:
+        image_data = base64.b64encode(f.read()).decode("utf-8")
+    
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
+            ]
+        }]
+    )
+    
+    return response.choices[0].message.content
 
 
 def extract_json(text: str) -> dict:
@@ -183,13 +221,12 @@ def extract_json(text: str) -> dict:
     raise ValueError("Could not extract valid JSON from response")
 
 
-def consolidate_tags(consolidate_model: str = DEFAULT_MODEL, skip_llm: bool = False, ollama_host: str = None):
+def consolidate_tags(model: str, api_host: str, skip_llm: bool = False):
     """Consolidate similar tags using rule-based mappings and optional LLM."""
     print("=" * 50)
     print("TAG CONSOLIDATION")
     print("=" * 50)
-    if ollama_host:
-        print(f"Using Ollama host: {ollama_host}")
+    print(f"Using API host: {api_host}")
     
     db = SessionLocal()
     
@@ -231,10 +268,7 @@ def consolidate_tags(consolidate_model: str = DEFAULT_MODEL, skip_llm: bool = Fa
             print()
             print("Step 2: Running LLM consolidation...")
             
-            try:
-                import ollama
-                
-                prompt = f"""Given these tags from a party photo collection: {json.dumps(tag_labels)}
+            prompt = f"""Given these tags from a party photo collection: {json.dumps(tag_labels)}
 Identify ONLY very obvious duplicates that should be merged.
 Be conservative - prefer keeping specific tags over merging to generic ones.
 
@@ -255,40 +289,35 @@ Examples of BAD merges (too generic, DO NOT do):
 - building → architecture (too generic, keep "building")
 
 Only return valid JSON with merges you are confident about. Empty {{}} is okay if no good merges found."""
+            
+            content = get_llm_response(
+                host=api_host,
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+            ).strip()
+            
+            try:
+                llm_merges = extract_json(content)
                 
-                client = get_ollama_client(ollama_host)
-                response = client.chat(
-                    model=consolidate_model,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                
-                content = response.message.content.strip()
-                
-                try:
-                    llm_merges = extract_json(content)
-                    
-                    for old, new in llm_merges.items():
-                        if old in tag_labels and new in tag_labels:
-                            if old not in merges or merges[old] != new:
-                                # Verify target exists
-                                if db.query(Tag).filter(Tag.label == new).first():
-                                    merges[old] = new
-                                    print(f"  LLM: '{old}' → '{new}'")
-                                    
-                except ValueError as e:
-                    print(f"  LLM response parsing failed: {e}")
-                    print(f"  Raw response (first 200 chars): {content[:200]}...")
-                except Exception as e:
-                    print(f"  LLM consolidation error: {e}")
-                
+                for old, new in llm_merges.items():
+                    if old in tag_labels and new in tag_labels:
+                        if old not in merges or merges[old] != new:
+                            if db.query(Tag).filter(Tag.label == new).first():
+                                merges[old] = new
+                                print(f"  LLM: '{old}' → '{new}'")
+                                
+            except ValueError as e:
+                print(f"  LLM response parsing failed: {e}")
+                print(f"  Raw response (first 200 chars): {content[:200]}...")
             except Exception as e:
-                print(f"  LLM consolidation skipped: {e}")
+                print(f"  LLM consolidation error: {e}")
         else:
             print("  (Skipped - using --no-merge flag)")
         
         if not merges:
             print()
             print("No consolidations needed.")
+            db.close()
             return
         
         print()
@@ -350,25 +379,15 @@ Only return valid JSON with merges you are confident about. Empty {{}} is okay i
         db.close()
 
 
-def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str = None, retag: bool = False):
+def tag_photos(model: str = DEFAULT_MODEL, api_host: str = "http://localhost:8001", merge: bool = True, retag: bool = False):
     print("=" * 50)
     print("AI TAGGING")
     print("=" * 50)
     print(f"Using model: {model}")
-    if ollama_host:
-        print(f"Using Ollama host: {ollama_host}")
-    else:
-        print(f"Make sure Ollama is running: ollama serve")
+    print(f"API host: {api_host or 'http://localhost:8001'}")
     if retag:
         print("Re-tagging ALL photos (deleting existing tags first)")
     print()
-    
-    try:
-        import ollama
-    except ImportError:
-        print("ERROR: ollama package not installed.")
-        print("Install with: pip install ollama")
-        sys.exit(1)
     
     db = SessionLocal()
     
@@ -395,19 +414,13 @@ def tag_photos(model: str = DEFAULT_MODEL, merge: bool = True, ollama_host: str 
             print(f"[{i}/{len(photos)}] Processing {photo.original_filename}...")
             
             try:
-                client = get_ollama_client(ollama_host)
-                response = client.chat(
+                content = get_vision_response(
+                    host=api_host,
                     model=model,
-                    messages=[{
-                        'role': 'user',
-                        'content': '''Describe this image with 3-8 comma-separated keywords for objects, activities, and scenes. 
-Examples: cake, dancing, confetti, group photo, decorations, balloons, music, friends, gifts.
-Only respond with the keywords, nothing else.''',
-                        'images': [photo.storage_path]
-                    }]
+                    image_path=photo.storage_path,
+                    prompt="Describe this image with 3-8 comma-separated keywords for objects, activities, and scenes. Examples: cake, dancing, confetti, group photo, decorations, balloons, music, friends, gifts. Only respond with the keywords, nothing else."
                 )
                 
-                content = response.message.content
                 labels = [l.strip().lower() for l in content.split(',')]
                 labels = [l for l in labels if l and len(l) < 30]
                 labels = labels[:8]
@@ -446,14 +459,13 @@ Only respond with the keywords, nothing else.''',
     
     # Run consolidation after tagging
     if merge:
-        consolidate_tags(consolidate_model=consolidate_model, ollama_host=ollama_host)
+        consolidate_tags(model=model, api_host=api_host)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Tagging Script for PartyPix")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama vision model (default: {DEFAULT_MODEL})")
-    parser.add_argument("--consolidate-model", default=DEFAULT_MODEL, help=f"Ollama model for tag consolidation (text-only, default: {DEFAULT_MODEL})")
-    parser.add_argument("--ollama-host", default=None, help="Ollama host URL (e.g., http://192.168.1.100:11434)")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Model name (default: {DEFAULT_MODEL})")
+    parser.add_argument("--api-host", default="http://localhost:8001", help="llama.cpp server URL (default: http://localhost:8001)")
     parser.add_argument("--no-merge", action="store_true", help="Skip tag consolidation after tagging")
     parser.add_argument("--merge-only", action="store_true", help="Only run tag consolidation, skip tagging")
     parser.add_argument("--retag", action="store_true", help="Delete all existing tags and re-tag all photos from scratch")
@@ -467,10 +479,9 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Extract args
-    consolidate_model = args.consolidate_model
-    ollama_host = args.ollama_host
-    
+    api_host = args.api_host
+
     if args.merge_only:
-        consolidate_tags(consolidate_model=consolidate_model, skip_llm=False, ollama_host=ollama_host)
+        consolidate_tags(model=args.model, api_host=api_host)
     else:
-        tag_photos(model=args.model, merge=not args.no_merge, ollama_host=ollama_host, retag=args.retag)
+        tag_photos(model=args.model, api_host=api_host, merge=not args.no_merge, retag=args.retag)
